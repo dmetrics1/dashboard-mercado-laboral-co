@@ -1,0 +1,25 @@
+# Dashboard
+streamlit>=1.35.0
+
+# Procesamiento de datos (alto rendimiento)
+polars>=0.20.0
+
+# Visualización
+plotly>=5.22.0
+
+# ETL y datos
+pandas>=2.2.0
+pyarrow>=16.0.0
+openpyxl>=3.1.0          # leer .xlsx
+pyreadstat>=1.2.7         # leer .sav
+
+# Calidad de código
+ruff>=0.4.0
+black>=24.4.0
+
+# Tests
+pytest>=8.2.0
+pytest-cov>=5.0.0
+
+# Utilidades
+numpy>=1.26.0

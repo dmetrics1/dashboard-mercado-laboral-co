@@ -1,0 +1,47 @@
+# Ambientes virtuales
+.venv/
+venv/
+env/
+
+# Bases de datos crudas (demasiado grandes para git)
+data/raw/
+
+# Procesados: excluir todo excepto los parquet/json que necesita el dashboard
+data/processed/*
+!data/processed/indicadores_mensuales.parquet
+!data/processed/diccionario_limpio.parquet
+!data/processed/mapeos_variables.json
+!data/processed/metadata_variables.parquet
+!data/processed/reporte_cobertura_diccionario.md
+
+# Referencia sí va versionada
+!data/reference/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Streamlit
+.streamlit/secrets.toml
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs y temporales
+*.log
+*.tmp
