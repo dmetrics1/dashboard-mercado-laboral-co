@@ -83,7 +83,12 @@ VARS_DEMO = ["P3271", "P6040"]
 VARS_LABORAL = ["OCI", "DSI", "P6430", "RAMA2D_R4", "RAMA4D_R4"]
 VARS_INGRESO = ["P6500"]
 FACTOR_EXPANSION = "FEX_C18"
-VARS_POBLACION = ["PT", "FT", "PET", "CLASE", "P6070", "P3042", "P6090", "P6100", "P6920", "P6240"]
+VARS_POBLACION = [
+    "PT", "FT", "FFT", "PET", "CLASE", "P6070", "P3042", "P6090", "P6100", 
+    "P6110", "P6450", "P6920", "P6930", "P6940", "P6240",
+    "P3045S1", "P3046", "P3069", "P6765", "P3065", "P3066", 
+    "P3067", "P3067S1", "P3067S2", "P6775", "P3068", "OFICIO_C8"
+]
 
 # Columnas mínimas que necesita el dashboard
 VARS_DASHBOARD = (
@@ -114,17 +119,34 @@ DTYPE_MAP: dict[str, str] = {
     "P6040": "Int8",
     "PT": "Int8",
     "FT": "Int8",
+    "FFT": "Int8",
     "PET": "Int8",
     "CLASE": "Int8",
     "P6070": "Int8",
     "P3042": "Int8",
     "P6090": "Int8",
     "P6100": "Int8",
+    "P6110": "Int8",
+    "P6450": "Int8",
     "P6920": "Int8",
+    "P6930": "Int8",
+    "P6940": "Int8",
     "P6240": "Int16",
     "OCI": "Int8",
     "DSI": "Int8",
     "P6430": "Int8",
+    "P3045S1": "Int8",
+    "P3046": "Int8",
+    "P3069": "Int16",
+    "P6765": "Int8",
+    "P3065": "Int8",
+    "P3066": "Int8",
+    "P3067": "Int8",
+    "P3067S1": "Int8",
+    "P3067S2": "Int16",
+    "P6775": "Int8",
+    "P3068": "Int8",
+    "OFICIO_C8": "string",
     # Ingresos y factor
     "P6500": "Float64",
     "FEX_C18": "Float64",
@@ -145,12 +167,17 @@ MAPEOS_COMPLEMENTARIOS: dict[str, dict[str, str]] = {
 
 # ── Grupos de edad ────────────────────────────────────────────────────────────
 GRUPOS_EDAD: dict[str, tuple[int, int]] = {
-    "15-24": (15, 24),
-    "25-34": (25, 34),
-    "35-44": (35, 44),
-    "45-54": (45, 54),
-    "55-64": (55, 64),
-    "65+": (65, 120),
+    "15-19": (15, 19),
+    "20-24": (20, 24),
+    "25-29": (25, 29),
+    "30-34": (30, 34),
+    "35-39": (35, 39),
+    "40-44": (40, 44),
+    "45-49": (45, 49),
+    "50-54": (50, 54),
+    "55-59": (55, 59),
+    "60-64": (60, 64),
+    "65+":   (65, 120),
 }
 
 # ── Umbrales de validación ────────────────────────────────────────────────────

@@ -111,7 +111,8 @@ def test_ingreso_mediano_por_ciudad():
 def test_asignar_grupo_edad():
     df = pl.DataFrame({"P6040": [15, 24, 25, 34, 65, 80, 14]})
     result = asignar_grupo_edad(df)
-    assert result["grupo_edad"][0] == "15-24"
+    assert result["grupo_edad"][0] == "15-19"
+    assert result["grupo_edad"][1] == "20-24"
     assert result["grupo_edad"][4] == "65+"
     assert result["grupo_edad"][6] is None
 

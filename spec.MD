@@ -69,7 +69,7 @@ Dashboard interactivo sobre microdatos de la Gran Encuesta Integrada de Hogares 
 ### Demográficas
 - `P3271` — **Sexo al nacer** (1=Hombre, 2=Mujer). ⚠️ En la GEIH pre-2022 era `P6020`. Este proyecto usa la rediseñada, por eso `P3271`.
 - `P6040` — Edad en años cumplidos.
-- `P6210` — Nivel educativo.
+- `P3042` — Nivel educativo homologado para el dashboard. Nota: la especificación inicial mencionaba `P6210`, pero en la base real 2025 la variable disponible es `P3042`.
 
 ### Condición laboral
 - `OCI` — Indicador de ocupado.
@@ -204,7 +204,7 @@ Dimensiones de corte:
 |---|---|
 | Dashboard | **Streamlit** (no Dash, no Power BI) |
 | Gráficos | Plotly |
-| ETL | pandas + pyarrow |
+| ETL | Polars + pandas + pyarrow |
 | Persistencia intermedia | Parquet |
 | Lectura diccionario | pandas (`dtype=str`) |
 | Calidad código | ruff + black |
@@ -257,6 +257,8 @@ NO incluir en esta versión:
 
 ## 13. Estado actual del proyecto
 
+**Última revisión documental:** 2026-04-22.
+
 ### Ya construido
 - `SPEC.md`
 - `README.md` (orientado a reclutadores)
@@ -264,31 +266,33 @@ NO incluir en esta versión:
 - `.gitignore`
 - `requirements.txt`
 - `docs/protocolo_diccionario.md` (íntegro)
-- `docs/decisiones_tecnicas.md` (DT-001 a DT-006)
+- `docs/decisiones_tecnicas.md` (DT-001 a DT-009)
 - `src/config.py` (con mapeos complementarios)
 - `src/dictionary.py` (implementación completa del protocolo)
 - `data/reference/diccionario.xlsx` (en el repo)
 - `notebooks/00_explorar_diccionario.ipynb`
 - ✅ `src/loaders.py` — carga .parquet / .csv / .sav con tipado estricto
-- ✅ `src/indicators.py` — TD, TO, TGP, ingreso mediano ponderados con FEX_C18
-- ✅ `src/etl.py` — pipeline end-to-end, genera indicadores_mensuales.parquet
+- ✅ `src/indicators.py` — TD, TO, TGP, informalidad e ingreso mediano ponderados con FEX_C18
+- ✅ `src/etl.py` — pipeline end-to-end, genera `indicadores_mensuales.parquet` con 12 dimensiones
 - ✅ `src/validate.py` — compara TD vs cifras DANE, tolerancia 0.2 p.p.
 - ✅ `notebooks/01_explorar_base_anual.ipynb`
-- ✅ `app/main.py` — Streamlit rediseñado: 6 vistas, nav lateral custom con íconos SVG, KPIs con delta, gráficos Plotly pulidos (splines, etiquetas, hover), toggle oscuro/claro via query param, sidebar sticky
+- ✅ `app/main.py` — Streamlit rediseñado: 7 vistas, nav lateral custom con íconos SVG, KPIs con delta, gráficos Plotly pulidos, mapa coroplético, bloques interpretativos, toggle oscuro/claro via query param, sidebar sticky
 - ✅ `tests/test_dictionary.py` y `tests/test_indicators.py` — pytest
-- ✅ `docs/especificaciones.md` — matriz completa de variables por hoja (estado: listo / parcial / falta_etl / falta_recodificacion / falta_definicion_metodologica)
+- ✅ `docs/especificaciones.md` — matriz actualizada contra el código y el parquet vigente
 
 ### Decisiones de diseño UI (2026-04-14)
 - Nav lateral: links HTML puros con `?view=<key>` en query param. Sin `st.radio`.
-- Vistas identificadas por clave corta: `resumen`, `poblacion`, `ocupados`, `desocupados`, `brechas`, `metodologia`.
+- Vistas identificadas por clave corta: `resumen`, `poblacion`, `ocupados`, `desocupados`, `brechas`, `instrucciones`, `metodologia`.
 - Toggle de tema: `?theme=Dark|Light` en query param, leído al inicio del script.
 - Íconos: SVG inline estilo Feather/Lucide (16-20 px, stroke 1.8).
 - Paleta: accent `#7C3AED`, accent_2 `#06B6D4`, accent_3 `#F59E0B`, positive `#10B981`, negative `#F43F5E`.
 
 ### Pendiente por construir (prioridad en este orden)
 1. **`notebooks/03_validar_indicadores.ipynb`** — comparación con cifras oficiales DANE.
-2. **Deploy en Streamlit Community Cloud.**
-3. **Post de lanzamiento en LinkedIn** con narrativa y capturas.
+2. **Tiempo promedio de búsqueda (`P6240`)** — ya se carga la variable, falta agregar métrica al parquet y UI.
+3. **Granularidad trimestral/anual** — definir regla y exponer controles si se mantiene en alcance.
+4. **Deploy en Streamlit Community Cloud.**
+5. **Post de lanzamiento en LinkedIn** con narrativa y capturas.
 
 ---
 

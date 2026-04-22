@@ -23,6 +23,18 @@ POLARS_SCHEMA: dict[str, pl.DataType] = {
     "OCI": pl.Int16,
     "DSI": pl.Int16,
     "P6430": pl.Int16,
+    "P3045S1": pl.Int16,
+    "P3046": pl.Int16,
+    "P3069": pl.Int16,
+    "P6765": pl.Int16,
+    "P3065": pl.Int16,
+    "P3066": pl.Int16,
+    "P3067": pl.Int16,
+    "P3067S1": pl.Int16,
+    "P3067S2": pl.Int16,
+    "P6775": pl.Int16,
+    "P3068": pl.Int16,
+    "OFICIO_C8": pl.Utf8,
     "P6500": pl.Float64,
     "FEX_C18": pl.Float64,
 }
@@ -98,9 +110,20 @@ def cargar_año(
     else:
         raise ValueError(f"Formato no soportado: {ext}")
 
-    df = df.with_columns(pl.lit(año).cast(pl.Int16).alias("_año"))
+    # Preservar padding en cadenas si fueron cargadas como numéricas truncadas por el CSV
+    cols_to_pad = []
+    if "AREA" in df.columns:
+        cols_to_pad.append(pl.col("AREA").cast(pl.Utf8).str.pad_start(2, '0'))
+    if "DPTO" in df.columns:
+        cols_to_pad.append(pl.col("DPTO").cast(pl.Utf8).str.pad_start(2, '0'))
+
+    df = df.with_columns(
+        pl.lit(año).cast(pl.Int16).alias("_año"),
+        *cols_to_pad
+    )
     print(f"[loaders] {año}: {df.shape[0]:,} filas × {df.shape[1]} columnas.")
     return df
+
 
 
 def cargar_todos(
