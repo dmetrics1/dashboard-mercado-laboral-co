@@ -28,6 +28,14 @@ frecuencia mensual.
 | Instrucciones | listo | Guía de lectura para facultades y programas. No usa filtros. |
 | Metodología | listo | Ficha técnica, glosario y trazabilidad de variables. No usa filtros. |
 
+### Criterios visuales vigentes
+
+- El modo claro debe usar cajas visibles con fondo sólido, borde y sombra sutil; no debe depender solo del fondo general de página.
+- El modo oscuro conserva la misma estructura de contenedores, con contraste moderado para no saturar la lectura.
+- Los gráficos Plotly se muestran dentro de contenedores propios para separar cada visual del fondo.
+- El mapa departamental usa coroplético con contexto territorial, escala verde/azul, zoom medio-cercano y leyenda interna para evitar recortes.
+- La primera vista se mantiene compacta: filtros, KPIs y tendencia deben aparecer con el menor espacio vertical razonable.
+
 ## 3. Salida analítica actual
 
 ### Columnas principales

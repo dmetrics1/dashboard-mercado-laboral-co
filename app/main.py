@@ -85,23 +85,38 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
         z=data[indicador],
         customdata=data[["DPTO_label", "_value_fmt"]],
         featureidkey="properties.NOMBRE_DPT",
-        colorscale=[[0, t["panel_solid"]], [0.5, t["accent"]], [1, t["accent_2"]]],
-        marker_opacity=0.86,
-        marker_line_width=0.6,
+        colorscale=[
+            [0.00, "#DCFCE7"],
+            [0.28, "#86EFAC"],
+            [0.55, "#22C55E"],
+            [0.78, "#06B6D4"],
+            [1.00, "#2563EB"],
+        ],
+        marker_opacity=0.88,
+        marker_line_width=0.65,
         marker_line_color=t["panel_solid"],
-        colorbar=dict(title="", thickness=14, len=0.82, tickfont=dict(color=t["soft_text"])),
+        colorbar=dict(
+            title="",
+            thickness=11,
+            len=0.62,
+            x=0.965,
+            xanchor="right",
+            y=0.5,
+            tickfont=dict(color=t["soft_text"], size=10),
+        ),
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
     
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
-        mapbox_zoom=3.8,
-        mapbox_center={"lat": 4.570868, "lon": -74.297333},
-        height=460,
-        margin={"r":0,"t":42,"l":0,"b":0},
+        mapbox_zoom=4.18,
+        mapbox_center={"lat": 4.55, "lon": -74.20},
+        mapbox=dict(pitch=10, bearing=0),
+        height=500,
+        margin={"r":0,"t":42 if title else 0,"l":0,"b":0},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        title=dict(text=title, font=dict(size=14, color=t["text"]), x=0.05, y=0.95)
+        title=dict(text=title, font=dict(size=14, color=t["text"]), x=0.05, y=0.95) if title else None,
     )
     return fig
 
@@ -125,17 +140,17 @@ THEMES = {
         "negative": "#F43F5E",
         "text": "#F1F5F9",
         "muted": "#94A3B8",
-        "line": "rgba(255,255,255,0.07)",
+        "line": "rgba(255,255,255,0.10)",
         "app_bg": "linear-gradient(160deg, #080c1a 0%, #07091a 60%, #04060f 100%)",
         "sidebar_bg": "rgba(10,14,28,0.98)",
-        "panel_bg": "rgba(15,21,40,0.92)",
+        "panel_bg": "rgba(15,21,40,0.96)",
         "panel_solid": "rgba(12,18,35,0.98)",
         "soft_text": "#CBD5E1",
         "eyebrow_bg": "#1F153E",
         "eyebrow_text": "#c4b5fd",
         "input_bg": "rgba(255,255,255,0.04)",
-        "chart_grid": "rgba(255,255,255,0.05)",
-        "chart_bg": "rgba(0,0,0,0)",
+        "chart_grid": "rgba(255,255,255,0.07)",
+        "chart_bg": "rgba(12,18,35,0.24)",
     },
     "Light": {
         "accent": "#6D28D9",
@@ -144,34 +159,34 @@ THEMES = {
         "positive": "#059669",
         "negative": "#E11D48",
         "text": "#0F172A",
-        "muted": "#64748B",
-        "line": "rgba(15,23,42,0.09)",
-        "app_bg": "linear-gradient(160deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%)",
+        "muted": "#52627A",
+        "line": "rgba(15,23,42,0.16)",
+        "app_bg": "linear-gradient(160deg, #F8FAFC 0%, #EEF4FF 48%, #F7FAFF 100%)",
         "sidebar_bg": "rgba(255,255,255,0.98)",
-        "panel_bg": "rgba(255,255,255,0.92)",
-        "panel_solid": "rgba(255,255,255,0.98)",
-        "soft_text": "#334155",
+        "panel_bg": "rgba(255,255,255,0.98)",
+        "panel_solid": "#FFFFFF",
+        "soft_text": "#243244",
         "eyebrow_bg": "#7C3AED",
         "eyebrow_text": "#FFFFFF",
-        "input_bg": "rgba(15,23,42,0.03)",
-        "chart_grid": "rgba(0,0,0,0.05)",
-        "chart_bg": "rgba(0,0,0,0)",
+        "input_bg": "rgba(15,23,42,0.045)",
+        "chart_grid": "rgba(15,23,42,0.09)",
+        "chart_bg": "rgba(255,255,255,0.82)",
     },
 }
 
 ACTIVE_THEME = THEMES["Dark"]
 
-AGE_ORDER = ["65+", "60-64", "55-59", "50-54", "45-49", "40-44", "35-39", "30-34", "25-29", "20-24", "15-19"]
+AGE_ORDER = ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65+"]
 
 MAP_INDICATORS = {
-    "TD": {"label": "Tasa de desempleo (TD)", "short": "TD", "suffix": "%", "kind": "pct"},
-    "TO": {"label": "Tasa de ocupación (TO)", "short": "TO", "suffix": "%", "kind": "pct"},
-    "TGP": {"label": "Tasa global de participación", "short": "TGP", "suffix": "%", "kind": "pct"},
-    "tasa_informalidad": {"label": "Tasa de informalidad", "short": "Informalidad", "suffix": "%", "kind": "pct"},
-    "ocupados_exp": {"label": "Ocupados", "short": "Ocupados", "suffix": "", "kind": "count"},
-    "desocupados_exp": {"label": "Desocupados", "short": "Desocupados", "suffix": "", "kind": "count"},
-    "poblacion_total_exp": {"label": "Población total", "short": "Población", "suffix": "", "kind": "count"},
-    "ingreso_mediano": {"label": "Ingreso mediano", "short": "Ingreso", "suffix": "", "kind": "money"},
+    "TD": {"label": "Tasa de desempleo (TD)", "select": "TD - Desempleo", "short": "TD", "suffix": "%", "kind": "pct"},
+    "TO": {"label": "Tasa de ocupación (TO)", "select": "TO - Ocupación", "short": "TO", "suffix": "%", "kind": "pct"},
+    "TGP": {"label": "Tasa global de participación", "select": "TGP - Participación", "short": "TGP", "suffix": "%", "kind": "pct"},
+    "tasa_informalidad": {"label": "Tasa de informalidad", "select": "Informalidad", "short": "Informalidad", "suffix": "%", "kind": "pct"},
+    "ocupados_exp": {"label": "Ocupados", "select": "Ocupados", "short": "Ocupados", "suffix": "", "kind": "count"},
+    "desocupados_exp": {"label": "Desocupados", "select": "Desocupados", "short": "Desocupados", "suffix": "", "kind": "count"},
+    "poblacion_total_exp": {"label": "Población total", "select": "Población", "short": "Población", "suffix": "", "kind": "count"},
+    "ingreso_mediano": {"label": "Ingreso mediano", "select": "Ingreso", "short": "Ingreso", "suffix": "", "kind": "money"},
 }
 
 # Claves cortas usadas en routing y query_params
@@ -206,6 +221,24 @@ AUTHOR_LINKEDIN = "https://www.linkedin.com/in/daniel-molina-b76a4323b"
 AUTHOR_GITHUB = "https://github.com/dmgsjj"
 AUTHOR_PORTFOLIO = "https://danielmolina.dev"
 
+ICON_LINKEDIN = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<path fill="currentColor" d="M6.94 8.98H3.76v10.18h3.18V8.98Zm.27-3.14a1.83 1.83 0 1 0-3.66 0 1.83 1.83 0 0 0 3.66 0Zm12.9 7.5c0-3.06-1.63-4.48-3.8-4.48a3.29 3.29 0 0 0-2.98 1.64h-.04V8.98h-3.05v10.18h3.18v-5.04c0-1.33.25-2.62 1.9-2.62 1.63 0 1.65 1.52 1.65 2.7v4.96h3.18v-5.82h-.04Z"/>'
+    '</svg>'
+)
+ICON_GITHUB = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<path fill="currentColor" d="M12.02 2.2a10 10 0 0 0-3.16 19.49c.5.1.68-.21.68-.48v-1.7c-2.78.61-3.37-1.18-3.37-1.18-.45-1.16-1.1-1.47-1.1-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.04 1.53 1.04.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.47 9.47 0 0 1 5 0c1.9-1.29 2.74-1.02 2.74-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.57 4.94.36.31.68.92.68 1.86v2.76c0 .27.18.59.69.48A10 10 0 0 0 12.02 2.2Z"/>'
+    '</svg>'
+)
+ICON_SUN = (
+    _I + '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/>'
+    '<path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/>'
+    '<path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/>'
+    '<path d="m19.07 4.93-1.41 1.41"/></svg>'
+)
+ICON_MOON = _I + '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+
 # Gradiente de colores para barras múltiples
 BAR_COLORS_DARK = [
     "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95",
@@ -233,9 +266,11 @@ def inject_styles(theme_name: str) -> None:
     select_border = "rgba(15,23,42,0.16)" if theme_name == "Light" else "rgba(255,255,255,0.10)"
     dropdown_bg = "#FFFFFF" if theme_name == "Light" else "#0F172A"
     dropdown_hover = "#F3F0FF" if theme_name == "Light" else "rgba(124,58,237,0.16)"
-    chrome_shadow = "0 18px 44px rgba(15,23,42,0.08)" if theme_name == "Light" else "0 18px 50px rgba(0,0,0,0.20)"
+    chrome_shadow = "0 12px 28px rgba(15,23,42,0.10)" if theme_name == "Light" else "0 14px 34px rgba(0,0,0,0.22)"
+    chart_shadow = "0 10px 24px rgba(15,23,42,0.07)" if theme_name == "Light" else "0 12px 28px rgba(0,0,0,0.16)"
     sidebar_width = "15.5rem"
-    content_left = "17.25rem"
+    sidebar_gap = "0.9rem"
+    content_left = "16.85rem"
     st.markdown(
         f"""
         <style>
@@ -266,6 +301,16 @@ def inject_styles(theme_name: str) -> None:
             display: none !important;
         }}
 
+        /* Tarjeta contenedora del header + filtros (st.container(border=True)) */
+        [data-testid="stVerticalBlockBorderWrapper"] {{
+            background: {t['panel_bg']} !important;
+            border: 1.5px solid {select_border} !important;
+            border-radius: 12px !important;
+            padding: 0.85rem 1rem !important;
+            box-shadow: {chrome_shadow} !important;
+            margin-bottom: 0.68rem !important;
+        }}
+
         /* Contenedor principal para ajustar a sidebar fija */
         .stAppViewContainer {{
             background: {t['app_bg']} !important;
@@ -278,10 +323,10 @@ def inject_styles(theme_name: str) -> None:
             max-width: calc(100vw - {content_left}) !important;
             margin-left: {content_left} !important;
             margin-right: 0 !important;
-            padding-left: 1.55rem !important;
+            padding-left: 0.9rem !important;
             padding-right: 1.65rem !important;
-            padding-top: 1.55rem !important;
-            padding-bottom: 1.2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 0.9rem !important;
             box-sizing: border-box !important;
         }}
 
@@ -300,19 +345,20 @@ def inject_styles(theme_name: str) -> None:
 
         .fixed-sidebar {{
             position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
+            top: {sidebar_gap};
+            left: {sidebar_gap};
+            bottom: {sidebar_gap};
             width: {sidebar_width};
             background: {sidebar_surface};
-            border-right: 1px solid {sidebar_border};
+            border: 1px solid {sidebar_border};
+            border-radius: 1rem;
             display: flex;
             flex-direction: column;
             padding: 1rem 0.85rem 0.85rem;
             box-sizing: border-box;
             z-index: 10000;
             overflow: hidden;
-            box-shadow: {"16px 0 42px rgba(15,23,42,0.08)" if theme_name == "Light" else "16px 0 45px rgba(0,0,0,0.25)"};
+            box-shadow: {"0 18px 44px rgba(15,23,42,0.10)" if theme_name == "Light" else "0 18px 52px rgba(0,0,0,0.34)"};
         }}
         .nav-brand {{
             display: flex;
@@ -355,17 +401,21 @@ def inject_styles(theme_name: str) -> None:
             color: {sidebar_muted};
             text-transform: uppercase;
             letter-spacing: 0.16em;
-            margin: 0.15rem 0 0.7rem 0.4rem;
+            margin: 0.25rem 0 0.82rem 0.4rem;
             opacity: 0.82;
         }}
 
+        .nav-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.24rem;
+        }}
         .nav-item {{
             display: flex;
             align-items: center;
             gap: 0.72rem;
             min-height: 2.55rem;
             padding: 0 0.72rem;
-            margin-bottom: 0.26rem;
             border-radius: 0.58rem;
             text-decoration: none !important;
             color: {sidebar_muted} !important;
@@ -405,16 +455,17 @@ def inject_styles(theme_name: str) -> None:
 
         .nav-footer {{
             margin-top: auto;
-            padding-top: 0.8rem;
+            padding-top: 0.9rem;
             border-top: 1px solid {sidebar_border};
         }}
         .nav-footer-btns {{
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0.55rem;
+            gap: 0.62rem;
+            padding: 0.12rem;
         }}
         .nav-btn {{
-            height: 2.55rem;
+            height: 2.48rem;
             border-radius: 0.58rem;
             border: 1px solid {sidebar_border};
             background: {sidebar_input};
@@ -427,6 +478,8 @@ def inject_styles(theme_name: str) -> None:
         }}
         .nav-btn span, .nav-btn svg {{
             color: inherit !important;
+            width: 1.05rem;
+            height: 1.05rem;
         }}
         .nav-btn:hover {{
             border-color: {"rgba(124,58,237,0.28)" if theme_name == "Light" else "rgba(124,58,237,0.45)"};
@@ -450,7 +503,7 @@ def inject_styles(theme_name: str) -> None:
             display: flex;
             flex-wrap: wrap;
             gap: 0.45rem;
-            margin: 0.55rem 0 0.2rem;
+            margin: 0.42rem 0 0.08rem;
         }}
         .pill {{
             background: {t['input_bg']};
@@ -486,53 +539,100 @@ def inject_styles(theme_name: str) -> None:
         }}
         .card {{
             border-radius: 8px;
-            padding: 1rem;
-            min-height: 112px;
+            padding: 0.86rem 0.9rem;
+            min-height: 104px;
         }}
         .mini-card {{
             border-radius: 8px;
             padding: 0.9rem 1rem;
         }}
+        [data-testid="stPlotlyChart"] {{
+            background: {t['chart_bg']};
+            border: 1px solid {t['line']};
+            border-radius: 8px;
+            padding: 0.32rem 0.34rem;
+            box-shadow: {chart_shadow};
+        }}
+        [data-testid="stPlotlyChart"] > div {{
+            border-radius: 8px;
+            overflow: hidden;
+        }}
         .map-control-card {{
             background: {t['panel_bg']};
             border: 1px solid {t['line']};
             border-radius: 8px;
-            padding: 0.85rem;
-            min-height: 460px;
+            padding: 1rem;
+            min-height: 520px;
             box-shadow: {chrome_shadow};
+        }}
+        .map-panel {{
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }}
+        .map-plot-title {{
+            color: {t['text']};
+            font-size: 1.02rem;
+            font-weight: 850;
+            line-height: 1.2;
+            margin: 0 0 0.55rem 0.05rem;
+        }}
+        .map-panel-head {{
+            border-bottom: 1px solid {t['line']};
+            padding-bottom: 0.7rem;
+            margin-bottom: 0.2rem;
         }}
         .map-control-title {{
             color: {t['text']};
-            font-size: 0.88rem;
+            font-size: 0.95rem;
             font-weight: 850;
-            margin-bottom: 0.2rem;
+            line-height: 1.18;
+            margin-bottom: 0.25rem;
         }}
         .map-control-sub {{
             color: {t['muted']};
             font-size: 0.78rem;
             line-height: 1.35;
-            margin-bottom: 0.65rem;
+            margin-bottom: 0;
         }}
-        .map-rank-row {{
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 0.7rem;
-            align-items: center;
-            padding: 0.44rem 0;
-            border-bottom: 1px solid {t['line']};
-        }}
-        .map-rank-row:last-child {{ border-bottom: 0; }}
-        .map-rank-name {{
-            color: {t['soft_text']};
-            font-size: 0.8rem;
-            font-weight: 700;
-            overflow-wrap: anywhere;
-        }}
-        .map-rank-value {{
-            color: {t['text']};
-            font-size: 0.78rem;
+        .map-field-label {{
+            color: {t['muted']};
+            font-size: 0.7rem;
             font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.45rem;
+        }}
+        .map-extreme-card {{
+            border: 1px solid {t['line']};
+            border-radius: 8px;
+            padding: 0.85rem 0.95rem;
+            margin-top: 0.72rem;
+            background: {t['panel_solid']};
+        }}
+        .map-extreme-label {{
+            color: {t['muted']};
+            font-size: 0.68rem;
+            font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 0.32rem;
+        }}
+        .map-extreme-value {{
+            color: {t['text']};
+            font-size: 1.28rem;
+            font-weight: 850;
+            line-height: 1.05;
+            margin-bottom: 0.28rem;
             white-space: nowrap;
+        }}
+        .map-extreme-name {{
+            color: {t['soft_text']};
+            font-size: 0.84rem;
+            font-weight: 750;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }}
         .kpi-label, .mini-label {{
             color: {t['muted']};
@@ -544,7 +644,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .kpi-value {{
             color: {t['text']};
-            font-size: 2.15rem;
+            font-size: 2rem;
             font-weight: 800;
             letter-spacing: 0;
             line-height: 1.05;
@@ -560,7 +660,7 @@ def inject_styles(theme_name: str) -> None:
             color: {t['muted']};
             font-size: 0.8rem;
             line-height: 1.45;
-            margin-top: 0.45rem;
+            margin-top: 0.34rem;
         }}
         .kpi-delta {{
             display: inline-flex;
@@ -575,7 +675,7 @@ def inject_styles(theme_name: str) -> None:
         .kpi-delta.down {{ background: rgba(244,63,94,0.14); color: {t['negative']}; }}
         .kpi-delta.neutral {{ background: {t['input_bg']}; color: {t['muted']}; }}
 
-        .section-gap {{ height: 0.72rem; }}
+        .section-gap {{ height: 0.38rem; }}
         .section-gap-lg {{ height: 0.95rem; }}
         .section-header {{
             margin: 0.28rem 0 0.52rem;
@@ -768,6 +868,16 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
             title_text="",
             font=dict(color=t["soft_text"], size=11),
         ),
+    )
+    fig.update_traces(
+        textfont=dict(color=t["text"], size=11),
+        selector=dict(type="bar"),
+    )
+    fig.update_traces(
+        textfont=dict(color=t["text"], size=12),
+        insidetextfont=dict(color="#FFFFFF", size=12),
+        outsidetextfont=dict(color=t["text"], size=12),
+        selector=dict(type="pie"),
     )
     return fig
 
@@ -962,7 +1072,8 @@ def render_side_nav() -> str:
 
     is_dark = current_theme == "Dark"
     new_theme = "Light" if is_dark else "Dark"
-    theme_icon = "☀️" if is_dark else "🌙"
+    theme_icon = ICON_SUN if is_dark else ICON_MOON
+    theme_title = "Modo claro" if is_dark else "Modo oscuro"
 
     st.markdown(f"""<div class="fixed-sidebar">
 <div class="nav-brand">
@@ -973,14 +1084,14 @@ def render_side_nav() -> str:
     </div>
 </div>
 <div class="sidebar-section-label">Navegación</div>
-<div style="flex: 1;">
+<div class="nav-list" style="flex: 1;">
     {items_html}
 </div>
 <div class="nav-footer">
     <div class="nav-footer-btns">
-        <a href="{AUTHOR_LINKEDIN}" class="nav-btn" target="_blank" title="LinkedIn">in</a>
-        <a href="{AUTHOR_GITHUB}" class="nav-btn" target="_blank" title="GitHub">git</a>
-        <a href="?view={vista}&theme={new_theme}" class="nav-btn" target="_self" title="Cambiar Tema">{theme_icon}</a>
+        <a href="{AUTHOR_LINKEDIN}" class="nav-btn" target="_blank" title="LinkedIn">{ICON_LINKEDIN}</a>
+        <a href="{AUTHOR_GITHUB}" class="nav-btn" target="_blank" title="GitHub">{ICON_GITHUB}</a>
+        <a href="?view={vista}&theme={new_theme}" class="nav-btn" target="_self" title="{theme_title}">{theme_icon}</a>
     </div>
 </div>
 </div>""", unsafe_allow_html=True)
@@ -1074,13 +1185,16 @@ def render_map_module(df_dep: pd.DataFrame, default_indicator: str, key_prefix: 
         return
 
     default_index = options.index(default_indicator) if default_indicator in options else 0
-    map_col, control_col = st.columns([3.85, 1.15], gap="medium")
+    map_col, control_col = st.columns([4.05, 1.35], gap="medium")
 
     with control_col:
-        with st.container(border=True):
+        with st.container(border=True, height=555, key=f"{key_prefix}_map_panel"):
             st.markdown(
+                "<div class='map-panel-head'>"
                 "<div class='map-control-title'>Indicador del mapa</div>"
-                "<div class='map-control-sub'>Variable para colorear y ordenar departamentos.</div>",
+                "<div class='map-control-sub'>Variable territorial para colorear el mapa.</div>"
+                "</div>"
+                "<div class='map-field-label'>Indicador</div>",
                 unsafe_allow_html=True,
             )
             indicador = st.selectbox(
@@ -1088,43 +1202,36 @@ def render_map_module(df_dep: pd.DataFrame, default_indicator: str, key_prefix: 
                 options,
                 index=default_index,
                 key=f"{key_prefix}_map_indicator",
-                format_func=lambda col: MAP_INDICATORS[col]["label"],
+                format_func=lambda col: MAP_INDICATORS[col]["select"],
+                label_visibility="collapsed",
             )
-            top_n = st.slider(
-                "Departamentos",
-                min_value=5,
-                max_value=12,
-                value=7,
-                step=1,
-                key=f"{key_prefix}_map_top",
+            active_label = MAP_INDICATORS[indicador]["label"]
+            st.markdown(
+                f"<div class='map-control-sub' style='margin-top:0.35rem'>{active_label}</div>",
+                unsafe_allow_html=True,
             )
-            order_label = st.radio(
-                "Orden",
-                ["Mayor", "Menor"],
-                horizontal=True,
-                key=f"{key_prefix}_map_order",
-            )
-            ranking = latest_departments_for_indicator(df_dep, indicador).sort_values(
-                indicador, ascending=(order_label == "Menor")
-            ).head(top_n)
-            if not ranking.empty:
-                st.markdown(
-                    "<div class='map-control-sub' style='margin-top:0.65rem;margin-bottom:0.2rem'>Ranking</div>",
-                    unsafe_allow_html=True,
-                )
-                for _, item in ranking.iterrows():
+            values = latest_departments_for_indicator(df_dep, indicador)
+            if not values.empty:
+                high = values.loc[values[indicador].idxmax()]
+                low = values.loc[values[indicador].idxmin()]
+                for label, item in [("Mayor", high), ("Menor", low)]:
                     st.markdown(
-                        f"<div class='map-rank-row'>"
-                        f"<div class='map-rank-name'>{item['DPTO_label']}</div>"
-                        f"<div class='map-rank-value'>{_format_map_value(indicador, item[indicador])}</div>"
+                        f"<div class='map-extreme-card'>"
+                        f"<div class='map-extreme-label'>{label}</div>"
+                        f"<div class='map-extreme-value'>{_format_map_value(indicador, item[indicador])}</div>"
+                        f"<div class='map-extreme-name'>{item['DPTO_label']}</div>"
                         f"</div>",
                         unsafe_allow_html=True,
                     )
 
     meta = MAP_INDICATORS[indicador]
     with map_col:
+        st.markdown(
+            f"<div class='map-plot-title'>{title_prefix}: {meta['short']}</div>",
+            unsafe_allow_html=True,
+        )
         st.plotly_chart(
-            plot_mapa_departamentos(df_dep, indicador, f"{title_prefix}: {meta['short']}"),
+            plot_mapa_departamentos(df_dep, indicador, ""),
             use_container_width=True,
             config={"displayModeBar": False, "responsive": True},
         )
@@ -1168,7 +1275,11 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
             fmt_metric(max_val * 0.6), fmt_metric(max_val * 0.3),
             "0", fmt_metric(max_val * 0.3), fmt_metric(max_val * 0.6),
         ],
+        title_text="",
+        tickangle=0,
     )
+    fig.update_yaxes(title_text="Grupo de edad")
+    fig.update_layout(height=max(420, len(AGE_ORDER) * 32 + 150))
     # Línea central
     fig.add_vline(x=0, line_width=1.5, line_color=ACTIVE_THEME["line"])
     st.plotly_chart(fig, use_container_width=True)
@@ -1245,7 +1356,14 @@ def view_resumen(df_context, df_dep, context_label):
 
         fig = fig_base(fig, "Dinámica Laboral (Doble Eje)", f"Contexto: {context_label}")
         fig.update_yaxes(title_text="TO / TGP (%)", ticksuffix="%", secondary_y=False)
-        fig.update_yaxes(title_text="TD (%)", ticksuffix="%", secondary_y=True, showgrid=False)
+        fig.update_yaxes(
+            title_text="TD (%)",
+            ticksuffix="%",
+            secondary_y=True,
+            showgrid=False,
+            tickfont=dict(color=t["soft_text"], size=11),
+            title_font=dict(color=t["muted"], size=11),
+        )
         fig = add_eventos_geih(fig, t)
         st.plotly_chart(fig, use_container_width=True)
 
@@ -1948,8 +2066,10 @@ vista = render_side_nav()
 
 page_shell = st.container()
 with page_shell:
-    title_slot = st.container()
-    filters_slot = st.container()
+    hero_card = st.container(border=True)
+    with hero_card:
+        title_slot = st.container()
+        filters_slot = st.container()
     body_slot = st.container()
 
 # Metodología y manual no necesitan filtros — usar defaults sin renderizar el control
@@ -1960,8 +2080,7 @@ if vista in ("metodologia", "instrucciones"):
     ano_ui     = "Todos"
 else:
     with filters_slot:
-        with st.container(border=True):
-            ano_ui, anos_sel, geo_level, geo_sel = render_controls(df_all)
+        ano_ui, anos_sel, geo_level, geo_sel = render_controls(df_all)
 
 # Filtrar dimensiones
 df_nac         = filtrar(df_all, "nacional",            anos_sel, geo_level, geo_sel)

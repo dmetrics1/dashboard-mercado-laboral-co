@@ -74,12 +74,14 @@ Ultima revision: 2026-04-22.
 
 ## DT-009 - Storytelling UI y refinamiento geo-espacial
 
-**Decision:** la app incorpora bloques narrativos con `render_interpretation()`, marcas temporales en graficos y mapas coropleticos departamentales con GeoJSON.
+**Decision:** la app incorpora bloques narrativos con `render_interpretation()`, marcas temporales en graficos y mapas coropleticos departamentales con GeoJSON. En abril de 2026 se refino la interfaz para compactar espacios, reforzar contenedores en modo claro/oscuro y mejorar la legibilidad de ejes/valores.
 
 **Razon:** el dashboard no solo presenta indicadores; tambien guia lectura economica para usuarios academicos y tomadores de decision. Los mapas coropleticos sustituyen burbujas o dispersiones porque representan mejor la comparacion territorial por departamento.
 
 **Implicaciones de implementacion:**
 
 - `app/main.py -> plot_mapa_departamentos()` usa `go.Choroplethmapbox` y `data/reference/colombia_departamentos.geojson`.
+- El mapa mantiene contexto territorial con base cartografica, zoom medio-cercano, leyenda interna y una perspectiva ligera (`pitch` bajo) para evitar distorsion.
+- Los graficos Plotly se renderizan sobre contenedores con fondo, borde y sombra suave para que los valores sean legibles en modo claro y oscuro.
 - La dimension `departamento` se genera en `src/etl.py` con `DPTO_label`.
 - La vista `Instrucciones` queda separada de las vistas filtrables y sirve como guia de uso para facultades y programas.
