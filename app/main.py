@@ -117,11 +117,11 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
 
 def render_interpretation(text: str, title: str = "Lectura"):
     st.markdown(f"""
-    <div class="interpretation-block">
-        <div class="interpretation-title">{title}</div>
-        <div class="interpretation-text">{text}</div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="interpretation-block">
+<div class="interpretation-title">{title}</div>
+<div class="interpretation-text">{text}</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Paleta y temas
@@ -1058,11 +1058,11 @@ def render_kpi(col, label: str, value: str, foot: str, delta_html: str = ""):
         foot_block = f"<div class='kpi-foot'>{foot}</div>" if foot else ""
         st.markdown(
             f"""<div class='card'>
-                  <div class='kpi-label'>{label}</div>
-                  <div class='kpi-value'>{value}</div>
-                  {delta_block}
-                  {foot_block}
-                </div>""",
+<div class='kpi-label'>{label}</div>
+<div class='kpi-value'>{value}</div>
+{delta_block}
+{foot_block}
+</div>""",
             unsafe_allow_html=True,
         )
 
@@ -1071,9 +1071,9 @@ def render_section(title: str, subtitle: str = ""):
     sub_html = f"<div class='section-header-sub'>{subtitle}</div>" if subtitle else ""
     st.markdown(
         f"""<div class='section-header'>
-              <div class='section-header-title'>{title}</div>
-              {sub_html}
-            </div>""",
+<div class='section-header-title'>{title}</div>
+{sub_html}
+</div>""",
         unsafe_allow_html=True,
     )
 
@@ -1081,9 +1081,9 @@ def render_section(title: str, subtitle: str = ""):
 def placeholder(msg: str, icon: str = "🔧"):
     st.markdown(
         f"""<div class='placeholder-card'>
-              <span class='placeholder-icon'>{icon}</span>
-              {msg}
-            </div>""",
+<span class='placeholder-icon'>{icon}</span>
+{msg}
+</div>""",
         unsafe_allow_html=True,
     )
 
@@ -1092,12 +1092,12 @@ def render_header(view_key: str, ultimo_txt: str, context_label: str):
     label = NAV_LABELS.get(view_key, view_key.capitalize())
     st.markdown(
         f"""<div style='padding-top: 0.2rem;'>
-              <div class='topbar-title' style="font-size: 1.5rem; margin-bottom: 0.2rem;">{label}</div>
-              <div class='topbar-sub'>
-                Mercado laboral colombiano · GEIH DANE &nbsp;|&nbsp; Corte: {ultimo_txt}
-                &nbsp;|&nbsp; Contexto: <strong>{context_label}</strong>
-              </div>
-            </div>""",
+<div class='topbar-title' style="font-size: 1.5rem; margin-bottom: 0.2rem;">{label}</div>
+<div class='topbar-sub'>
+Mercado laboral colombiano · GEIH DANE &nbsp;|&nbsp; Corte: {ultimo_txt}
+&nbsp;|&nbsp; Contexto: <strong>{context_label}</strong>
+</div>
+</div>""",
         unsafe_allow_html=True,
     )
 
@@ -1677,10 +1677,9 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
 
     if geo_level != "Sin filtro":
         st.markdown(
-            "<div class='placeholder-card' style='margin:0.5rem 0'>ℹ️ "
-            "Pirámidas y cruces educación/posición permanecen nacionales hasta ampliar el ETL "
-            "con dimensiones geo-demográficas."
-            "</div>",
+            f"""<div class='placeholder-card' style='margin:0.5rem 0; padding:1.2rem;'>
+                ℹ️ Pirámides y cruces educación/posición permanecen nacionales hasta ampliar el ETL con dimensiones geo-demográficas.
+            </div>""",
             unsafe_allow_html=True,
         )
 
@@ -1709,13 +1708,8 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
         fig.update_layout(height=H_SINGLE)
         st.plotly_chart(fig, use_container_width=True)
         
-        render_interpretation(
-            "La informalidad laboral en Colombia es estructural: oscila entre 55% y 60% a nivel nacional. "
-            "La concentración crítica está en agricultura, ganadería y comercio menor, donde la falta de "
-            "afiliación al sistema contributivo es la norma. Cualquier política de formalización debe "
-            "atacar primero estos sectores.",
-            title="Lectura de informalidad",
-        )
+        inf_text = "La informalidad laboral en Colombia es estructural: oscila entre 55% y 60% a nivel nacional. La concentración crítica está en agricultura, ganadería y comercio menor, donde la falta de afiliación al sistema contributivo es la norma. Cualquier política de formalización debe atacar primero estos sectores."
+        render_interpretation(inf_text, title="Lectura de informalidad")
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Posición ocupacional y distribución geográfica")

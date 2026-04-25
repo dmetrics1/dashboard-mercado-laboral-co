@@ -1,6 +1,6 @@
-﻿# Log de decisiones tecnicas
+# Log de decisiones tecnicas
 
-Ultima revision: 2026-04-22.
+Ultima revision: 2026-04-25.
 
 ---
 
@@ -86,8 +86,6 @@ Ultima revision: 2026-04-22.
 - La dimension `departamento` se genera en `src/etl.py` con `DPTO_label`.
 - La vista `Instrucciones` queda separada de las vistas filtrables y sirve como guia de uso para facultades y programas.
 
----
-
 ## DT-010 - Rediseno visual editorial (2026-04-25)
 
 **Decision:** refactorizacion completa del sistema visual de `app/main.py` siguiendo principios de la skill `frontend-design` (anthropics/skills): direccion estetica comprometida, tipografia distintiva, paleta coherente, sin estetica generica de IA.
@@ -104,3 +102,11 @@ Ultima revision: 2026-04-22.
 - **Vistas Instrucciones y Metodologia:** reescritas completamente. Instrucciones incluye glosario de 6 indicadores, 4 rutas de lectura por perfil (Ingenieria, Ciencias Sociales, Decanaturas, Periodismo) y 5 reglas de interpretacion. Metodologia incluye tabla de trazabilidad indicador→variable→calculo.
 - **Interpretaciones corregidas:** cada `render_interpretation()` corresponde exactamente a los graficos visibles en su vista. Eliminado texto sobre "piramide poblacional" en vista Brechas y "esta zona" en Ocupados.
 - **Codigo muerto:** `BAR_COLORS_DARK` y `BAR_COLORS_LIGHT` (identicos, sin uso) eliminados.
+
+---
+
+## DT-011 - Eliminacion de indentacion en st.markdown
+
+**Decision:** remover toda indentación (espacios iniciales) dentro de las f-strings multilínea pasadas a `st.markdown` en los componentes UI (`render_section`, `render_interpretation`, `render_kpi`, etc.).
+
+**Razon:** el procesador de Markdown de Streamlit interpreta líneas con 4 o más espacios iniciales como bloques de código. Esto causaba que el HTML inyectado se renderizara como texto literal (ej. el tag `</div>` huérfano) dentro de cajas con fondo oscuro, rompiendo la interfaz. Al limpiar la indentación, el motor de Markdown procesa el contenido correctamente como HTML puro.
