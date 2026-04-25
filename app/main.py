@@ -6,6 +6,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -85,13 +86,7 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
         z=data[indicador],
         customdata=data[["DPTO_label", "_value_fmt"]],
         featureidkey="properties.NOMBRE_DPT",
-        colorscale=[
-            [0.00, "#DCFCE7"],
-            [0.28, "#86EFAC"],
-            [0.55, "#22C55E"],
-            [0.78, "#06B6D4"],
-            [1.00, "#2563EB"],
-        ],
+        colorscale=BLUE_TEAL_SCALE,
         marker_opacity=0.88,
         marker_line_width=0.65,
         marker_line_color=t["panel_solid"],
@@ -120,10 +115,10 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
     )
     return fig
 
-def render_interpretation(text: str):
+def render_interpretation(text: str, title: str = "Lectura"):
     st.markdown(f"""
     <div class="interpretation-block">
-        <div class="interpretation-title">💡 Análisis Estratégico</div>
+        <div class="interpretation-title">{title}</div>
         <div class="interpretation-text">{text}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -133,8 +128,8 @@ def render_interpretation(text: str):
 # ---------------------------------------------------------------------------
 THEMES = {
     "Dark": {
-        "accent": "#7C3AED",
-        "accent_2": "#06B6D4",
+        "accent": "#338CA1",
+        "accent_2": "#7BBDBF",
         "accent_3": "#F59E0B",
         "positive": "#10B981",
         "negative": "#F43F5E",
@@ -146,37 +141,50 @@ THEMES = {
         "panel_bg": "rgba(15,21,40,0.96)",
         "panel_solid": "rgba(12,18,35,0.98)",
         "soft_text": "#CBD5E1",
-        "eyebrow_bg": "#1F153E",
-        "eyebrow_text": "#c4b5fd",
+        "eyebrow_bg": "rgba(81,166,174,0.18)",
+        "eyebrow_text": "#7BBDBF",
         "input_bg": "rgba(255,255,255,0.04)",
         "chart_grid": "rgba(255,255,255,0.07)",
-        "chart_bg": "rgba(12,18,35,0.24)",
+        "chart_bg": "rgba(0,0,0,0)",
     },
     "Light": {
-        "accent": "#6D28D9",
-        "accent_2": "#0284C7",
-        "accent_3": "#D97706",
-        "positive": "#059669",
-        "negative": "#E11D48",
-        "text": "#0F172A",
-        "muted": "#52627A",
-        "line": "rgba(15,23,42,0.16)",
-        "app_bg": "linear-gradient(160deg, #F8FAFC 0%, #EEF4FF 48%, #F7FAFF 100%)",
-        "sidebar_bg": "rgba(255,255,255,0.98)",
-        "panel_bg": "rgba(255,255,255,0.98)",
-        "panel_solid": "#FFFFFF",
-        "soft_text": "#243244",
-        "eyebrow_bg": "#7C3AED",
-        "eyebrow_text": "#FFFFFF",
-        "input_bg": "rgba(15,23,42,0.045)",
-        "chart_grid": "rgba(15,23,42,0.09)",
-        "chart_bg": "rgba(255,255,255,0.82)",
+        "accent": "#1E2D55",
+        "accent_2": "#27638A",
+        "accent_3": "#B45309",
+        "positive": "#047857",
+        "negative": "#B91C1C",
+        "text": "#1A1812",
+        "muted": "#5C5A52",
+        "line": "rgba(26,24,18,0.14)",
+        "app_bg": "#F4EFE6",
+        "sidebar_bg": "#FBF8F1",
+        "panel_bg": "#FBF8F1",
+        "panel_solid": "#FBF8F1",
+        "soft_text": "#2A2620",
+        "eyebrow_bg": "rgba(30,45,85,0.08)",
+        "eyebrow_text": "#1E2D55",
+        "input_bg": "rgba(26,24,18,0.04)",
+        "chart_grid": "rgba(26,24,18,0.08)",
+        "chart_bg": "rgba(0,0,0,0)",
     },
 }
 
 ACTIVE_THEME = THEMES["Dark"]
 
 AGE_ORDER = ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65+"]
+
+BLUE_TEAL_30 = [
+    "#EDF7F7", "#E5F3F3", "#DDEEEF", "#D5EAEB", "#CCE5E6",
+    "#C3E0E2", "#B9DBDD", "#AED6D8", "#A2D0D2", "#96CACC",
+    "#89C4C5", "#7BBDBF", "#6DB6B9", "#5FAEB3", "#51A6AE",
+    "#459EA9", "#3B95A5", "#338CA1", "#2E829D", "#2B7898",
+    "#296E91", "#27638A", "#255982", "#244F7A", "#234672",
+    "#223F6B", "#213964", "#20345E", "#1F3059", "#1E2D55",
+]
+BLUE_TEAL_SCALE = [[i / (len(BLUE_TEAL_30) - 1), color] for i, color in enumerate(BLUE_TEAL_30)]
+BLUE_TEAL_DISCRETE = ["#1E2D55", "#27638A", "#338CA1", "#51A6AE", "#7BBDBF", "#A2D0D2", "#D5EAEB"]
+BT_NAVY, BT_DEEP, BT_BLUE, BT_TEAL, BT_MINT, BT_PALE, BT_ICE = BLUE_TEAL_DISCRETE
+SEX_COLORS = {"Hombre": BT_DEEP, "Mujer": BT_TEAL}
 
 MAP_INDICATORS = {
     "TD": {"label": "Tasa de desempleo (TD)", "select": "TD - Desempleo", "short": "TD", "suffix": "%", "kind": "pct"},
@@ -239,34 +247,29 @@ ICON_SUN = (
 )
 ICON_MOON = _I + '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
 
-# Gradiente de colores para barras múltiples
-BAR_COLORS_DARK = [
-    "#7C3AED", "#6D28D9", "#5B21B6", "#4C1D95",
-    "#06B6D4", "#0891B2", "#0E7490", "#155E75",
-]
-BAR_COLORS_LIGHT = [
-    "#6D28D9", "#7C3AED", "#8B5CF6", "#A78BFA",
-    "#0284C7", "#0369A1", "#075985", "#0C4A6E",
-]
-
 
 # ---------------------------------------------------------------------------
 # Estilos globales
 # ---------------------------------------------------------------------------
 def inject_styles(theme_name: str) -> None:
     t = THEMES[theme_name]
-    sidebar_surface = "#F7F5F1" if theme_name == "Light" else "#0B1020"
-    sidebar_border = "rgba(15,23,42,0.12)" if theme_name == "Light" else "rgba(255,255,255,0.08)"
-    sidebar_text = "#1F2937" if theme_name == "Light" else "#E5E7EB"
-    sidebar_muted = "#5F6673" if theme_name == "Light" else "#9AA4B2"
-    sidebar_input = "rgba(15,23,42,0.045)" if theme_name == "Light" else "rgba(255,255,255,0.04)"
-    select_bg = "#FFFFFF" if theme_name == "Light" else "#0C1223"
-    select_text = "#111827" if theme_name == "Light" else "#F8FAFC"
-    select_muted = "#4B5563" if theme_name == "Light" else "#CBD5E1"
-    select_border = "rgba(15,23,42,0.16)" if theme_name == "Light" else "rgba(255,255,255,0.10)"
-    dropdown_bg = "#FFFFFF" if theme_name == "Light" else "#0F172A"
-    dropdown_hover = "#F3F0FF" if theme_name == "Light" else "rgba(124,58,237,0.16)"
-    chrome_shadow = "0 12px 28px rgba(15,23,42,0.10)" if theme_name == "Light" else "0 14px 34px rgba(0,0,0,0.22)"
+    # Paleta cálida para modo claro — todos los tonos en la misma familia arena/lino
+    sidebar_surface = t["panel_bg"] if theme_name == "Light" else "#0B1020"
+    sidebar_border = "rgba(139,110,75,0.18)" if theme_name == "Light" else "rgba(255,255,255,0.08)"
+    sidebar_text = "#1A1812" if theme_name == "Light" else "#E5E7EB"
+    sidebar_muted = "#6B6355" if theme_name == "Light" else "#9AA4B2"
+    sidebar_input = "rgba(26,24,18,0.05)" if theme_name == "Light" else "rgba(255,255,255,0.04)"
+    sidebar_accent = f"linear-gradient(135deg, {BT_DEEP} 0%, {BT_BLUE} 56%, {BT_TEAL} 100%)"
+    sidebar_accent_soft = "rgba(30,45,85,0.08)" if theme_name == "Light" else "rgba(81,166,174,0.15)"
+    sidebar_accent_border = "rgba(30,45,85,0.18)" if theme_name == "Light" else "rgba(123,189,191,0.34)"
+    sidebar_accent_shadow = "0 8px 20px rgba(30,45,85,0.18)" if theme_name == "Light" else "0 10px 28px rgba(0,0,0,0.34)"
+    select_bg = "#F5F0E6" if theme_name == "Light" else "#0C1223"
+    select_text = "#1A1812" if theme_name == "Light" else "#F8FAFC"
+    select_muted = "#6B6355" if theme_name == "Light" else "#CBD5E1"
+    select_border = "rgba(139,110,75,0.22)" if theme_name == "Light" else "rgba(255,255,255,0.16)"
+    dropdown_bg = "#F5F0E6" if theme_name == "Light" else "#0F172A"
+    dropdown_hover = "rgba(30,45,85,0.08)" if theme_name == "Light" else "rgba(81,166,174,0.16)"
+    chrome_shadow = "0 6px 18px rgba(139,110,75,0.10)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.18)"
     chart_shadow = "0 10px 24px rgba(15,23,42,0.07)" if theme_name == "Light" else "0 12px 28px rgba(0,0,0,0.16)"
     sidebar_width = "15.5rem"
     sidebar_gap = "0.9rem"
@@ -274,11 +277,16 @@ def inject_styles(theme_name: str) -> None:
     st.markdown(
         f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&display=swap');
 
         html, body, [class*="css"] {{
-            font-family: "Outfit", system-ui, sans-serif;
+            font-family: "Manrope", system-ui, sans-serif;
             color: {t['text']};
+        }}
+        .display-serif {{
+            font-family: "Fraunces", Georgia, serif !important;
+            font-optical-sizing: auto;
+            letter-spacing: -0.01em;
         }}
         body, .stApp, p, span, div, label {{
             color-scheme: {"light" if theme_name == "Light" else "dark"};
@@ -301,14 +309,19 @@ def inject_styles(theme_name: str) -> None:
             display: none !important;
         }}
 
-        /* Tarjeta contenedora del header + filtros (st.container(border=True)) */
-        [data-testid="stVerticalBlockBorderWrapper"] {{
+        /* Tarjeta contenedora del header + filtros */
+        .st-key-hero_filters_card,
+        .st-key-hero_filters_card [data-testid="stVerticalBlockBorderWrapper"] {{
             background: {t['panel_bg']} !important;
-            border: 1.5px solid {select_border} !important;
+            border: 1px solid {select_border} !important;
             border-radius: 12px !important;
             padding: 0.85rem 1rem !important;
-            box-shadow: {chrome_shadow} !important;
+            box-shadow: {"0 2px 8px rgba(139,110,75,0.08)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.04)"} !important;
             margin-bottom: 0.68rem !important;
+        }}
+        .st-key-hero_filters_card > div,
+        .st-key-hero_filters_card [data-testid="stVerticalBlockBorderWrapper"] > div {{
+            background: transparent !important;
         }}
 
         /* Contenedor principal para ajustar a sidebar fija */
@@ -370,11 +383,11 @@ def inject_styles(theme_name: str) -> None:
         }}
         .nav-brand-logo {{
             width: 2.35rem; height: 2.35rem;
-            background: {"rgba(124,58,237,0.10)" if theme_name == "Light" else "rgba(124,58,237,0.18)"};
+            background: {sidebar_accent_soft};
             border-radius: 0.55rem;
             display: flex; align-items: center; justify-content: center;
-            color: {t['accent']}; font-weight: 800; font-size: 0.88rem;
-            border: 1px solid {"rgba(124,58,237,0.16)" if theme_name == "Light" else "rgba(124,58,237,0.28)"};
+            color: {BT_DEEP}; font-weight: 800; font-size: 0.88rem;
+            border: 1px solid {sidebar_accent_border};
             flex: 0 0 auto;
         }}
         .nav-brand-text {{
@@ -433,10 +446,10 @@ def inject_styles(theme_name: str) -> None:
             transform: translateX(1px);
         }}
         .nav-item.active {{
-            background: {t['accent']} !important;
+            background: {sidebar_accent} !important;
             color: #FFFFFF !important;
             font-weight: 850;
-            box-shadow: 0 8px 22px {t['accent']}40;
+            box-shadow: {sidebar_accent_shadow};
         }}
         .nav-icon {{
             display: inline-flex;
@@ -482,21 +495,27 @@ def inject_styles(theme_name: str) -> None:
             height: 1.05rem;
         }}
         .nav-btn:hover {{
-            border-color: {"rgba(124,58,237,0.28)" if theme_name == "Light" else "rgba(124,58,237,0.45)"};
-            background: {"rgba(124,58,237,0.08)" if theme_name == "Light" else "rgba(124,58,237,0.14)"};
-            color: {t['accent']} !important;
+            border-color: {sidebar_accent_border};
+            background: {sidebar_accent_soft};
+            color: {BT_DEEP} !important;
         }}
 
         .topbar-title {{
             color: {t['text']};
-            font-weight: 800;
-            letter-spacing: 0;
-            line-height: 1.08;
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-weight: 600;
+            letter-spacing: -0.018em;
+            line-height: 1.05;
         }}
         .topbar-sub {{
             color: {t['muted']};
-            font-size: 0.80rem;
-            line-height: 1.35;
+            font-size: 0.82rem;
+            line-height: 1.4;
+        }}
+        .topbar-sub strong {{
+            color: {t['text']};
+            font-weight: 700;
         }}
 
         .pill-row {{
@@ -515,13 +534,6 @@ def inject_styles(theme_name: str) -> None:
             font-weight: 600;
         }}
 
-        [data-testid="stVerticalBlockBorderWrapper"] {{
-            background: {t['panel_bg']} !important;
-            border: 1px solid {t['line']};
-            border-radius: 8px !important;
-            margin: 0.85rem 0 1.15rem !important;
-            box-shadow: {chrome_shadow};
-        }}
         .filters-title {{
             color: {select_muted};
             font-size: 0.68rem;
@@ -538,24 +550,31 @@ def inject_styles(theme_name: str) -> None:
             box-shadow: {chrome_shadow};
         }}
         .card {{
-            border-radius: 8px;
-            padding: 0.86rem 0.9rem;
-            min-height: 104px;
+            border-radius: 10px;
+            padding: 0.95rem 1rem 0.9rem;
+            min-height: 116px;
+            position: relative;
+            overflow: hidden;
+        }}
+        .card::before {{
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, {BT_DEEP} 0%, {BT_BLUE} 50%, {BT_TEAL} 100%);
+            opacity: 0.95;
         }}
         .mini-card {{
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 0.9rem 1rem;
         }}
+        /* Tarjeta-contenedor para cada st.plotly_chart (visualmente la del spec) */
         [data-testid="stPlotlyChart"] {{
-            background: {t['chart_bg']};
-            border: 1px solid {t['line']};
-            border-radius: 8px;
-            padding: 0.32rem 0.34rem;
-            box-shadow: {chart_shadow};
-        }}
-        [data-testid="stPlotlyChart"] > div {{
-            border-radius: 8px;
-            overflow: hidden;
+            background: {t['panel_bg']} !important;
+            border: 1px solid {t['line']} !important;
+            border-radius: 10px !important;
+            padding: 0.55rem 0.55rem 0.4rem !important;
+            box-shadow: {chart_shadow} !important;
         }}
         .map-control-card {{
             background: {t['panel_bg']};
@@ -637,30 +656,35 @@ def inject_styles(theme_name: str) -> None:
         .kpi-label, .mini-label {{
             color: {t['muted']};
             font-size: 0.7rem;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.4rem;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.45rem;
         }}
         .kpi-value {{
             color: {t['text']};
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: 0;
-            line-height: 1.05;
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-size: 2.15rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            line-height: 1.0;
             overflow-wrap: anywhere;
         }}
         .mini-value {{
             color: {t['text']};
-            font-size: 1.45rem;
-            font-weight: 800;
-            line-height: 1.1;
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: -0.012em;
+            line-height: 1.05;
         }}
         .kpi-foot, .mini-foot {{
             color: {t['muted']};
             font-size: 0.8rem;
             line-height: 1.45;
-            margin-top: 0.34rem;
+            margin-top: 0.55rem;
         }}
         .kpi-delta {{
             display: inline-flex;
@@ -675,22 +699,31 @@ def inject_styles(theme_name: str) -> None:
         .kpi-delta.down {{ background: rgba(244,63,94,0.14); color: {t['negative']}; }}
         .kpi-delta.neutral {{ background: {t['input_bg']}; color: {t['muted']}; }}
 
-        .section-gap {{ height: 0.38rem; }}
-        .section-gap-lg {{ height: 0.95rem; }}
+        .section-gap {{ height: 0.85rem; }}
+        .section-gap-lg {{ height: 1.45rem; }}
         .section-header {{
-            margin: 0.28rem 0 0.52rem;
-            padding-top: 0.15rem;
+            margin: 0.65rem 0 0.55rem;
+            padding-top: 0.05rem;
+            border-top: 1px solid {t['line']};
+            padding-top: 0.85rem;
+        }}
+        .section-header:first-of-type {{
+            border-top: none;
+            padding-top: 0.1rem;
         }}
         .section-header-title {{
             color: {t['text']};
-            font-size: 1rem;
-            font-weight: 800;
-            letter-spacing: 0;
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-size: 1.32rem;
+            font-weight: 600;
+            letter-spacing: -0.012em;
+            line-height: 1.15;
         }}
         .section-header-sub {{
             color: {t['muted']};
-            font-size: 0.82rem;
-            margin-top: 0.12rem;
+            font-size: 0.85rem;
+            margin-top: 0.22rem;
         }}
 
         .placeholder-card {{
@@ -709,24 +742,32 @@ def inject_styles(theme_name: str) -> None:
         .interpretation-block {{
             background: {t['panel_bg']};
             border: 1px solid {t['line']};
-            border-left: 3px solid {t['accent']};
-            border-radius: 8px;
-            padding: 0.85rem 1rem;
-            margin: 0.7rem 0 1.15rem;
+            border-left: 4px solid {BT_DEEP};
+            border-radius: 10px;
+            padding: 1.05rem 1.2rem 1.1rem;
+            margin: 1rem 0 1.4rem;
             color: {t['soft_text']};
-            line-height: 1.5;
+            line-height: 1.55;
+            box-shadow: {chart_shadow};
         }}
         .interpretation-title {{
             color: {t['text']};
-            font-size: 0.78rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.25rem;
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: -0.005em;
+            margin-bottom: 0.35rem;
+        }}
+        .interpretation-title::before {{
+            content: "—";
+            color: {BT_DEEP};
+            font-weight: 700;
+            margin-right: 0.45rem;
         }}
         .interpretation-text {{
             color: {t['soft_text']};
-            font-size: 0.92rem;
+            font-size: 0.94rem;
         }}
 
         [data-testid="stSelectbox"] label {{
@@ -837,7 +878,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
             xanchor="left",
             pad=dict(l=4),
         ),
-        margin=dict(l=20, r=22, t=74 if full_title else 24, b=48),
+        margin=dict(l=20, r=22, t=90 if full_title else 24, b=48),
         hoverlabel=dict(
             bgcolor=t["panel_solid"],
             bordercolor=t["line"],
@@ -862,8 +903,9 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
         ),
         legend=dict(
             orientation="h",
-            y=1.12,
+            y=1.06,
             x=0,
+            yanchor="bottom",
             bgcolor="rgba(0,0,0,0)",
             title_text="",
             font=dict(color=t["soft_text"], size=11),
@@ -886,7 +928,7 @@ def fig_base_h(fig, title: str = "", subtitle: str = ""):
     """Base para gráficos horizontales (intercambia grid de ejes)."""
     fig = fig_base(fig, title, subtitle)
     fig.update_layout(
-        margin=dict(l=28, r=34, t=74 if (title or subtitle) else 24, b=52),
+        margin=dict(l=28, r=34, t=90 if (title or subtitle) else 24, b=52),
         xaxis=dict(
             gridcolor=ACTIVE_THEME["chart_grid"],
             gridwidth=1,
@@ -1247,42 +1289,116 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
         return
     t = ACTIVE_THEME
     data = df.copy()
-    data["grupo_edad"] = pd.Categorical(data["grupo_edad"], AGE_ORDER, ordered=True)
-    data = data.sort_values("grupo_edad")
-    is_h = data["P3271_label"].astype(str).str.lower().eq("hombre")
-    data["plot"] = data[value_col]
-    data.loc[is_h, "plot"] *= -1
+    if "periodo" in data.columns:
+        data = data[data["periodo"] == data["periodo"].max()].copy()
 
-    fig = px.bar(
-        data,
-        x="plot",
-        y="grupo_edad",
-        color="P3271_label",
+    data[value_col] = pd.to_numeric(data[value_col], errors="coerce").fillna(0)
+    data["grupo_edad"] = pd.Categorical(data["grupo_edad"], AGE_ORDER, ordered=True)
+    data = (
+        data.dropna(subset=["grupo_edad", "P3271_label"])
+        .groupby(["grupo_edad", "P3271_label"], observed=True, as_index=False)[value_col]
+        .sum()
+    )
+    pivot = (
+        data.pivot_table(
+            index="grupo_edad",
+            columns="P3271_label",
+            values=value_col,
+            aggfunc="sum",
+            observed=True,
+            fill_value=0,
+        )
+        .reindex(AGE_ORDER, fill_value=0)
+    )
+    hombres = pivot["Hombre"] if "Hombre" in pivot.columns else pd.Series(0, index=pivot.index)
+    mujeres = pivot["Mujer"] if "Mujer" in pivot.columns else pd.Series(0, index=pivot.index)
+    total = float(hombres.sum() + mujeres.sum())
+    if total <= 0:
+        placeholder("No hay valores suficientes para construir la pirámide con los filtros actuales.", "🔺")
+        return
+
+    max_val = float(max(hombres.max(), mujeres.max()))
+    magnitude = 10 ** np.floor(np.log10(max_val))
+    tick_max = np.ceil(max_val / magnitude) * magnitude
+    tick_step = tick_max / 2
+    tickvals = [-tick_max, -tick_step, 0, tick_step, tick_max]
+    ticktext = [fmt_metric(abs(v)) if v else "0" for v in tickvals]
+    marker_line = "rgba(255,255,255,0.65)" if st.session_state.get("theme_mode") == "Light" else "rgba(2,6,23,0.55)"
+
+    fig = go.Figure()
+    fig.add_bar(
+        y=pivot.index.astype(str),
+        x=-hombres,
+        name="Hombres",
         orientation="h",
-        color_discrete_map={"Hombre": t["soft_text"], "Mujer": t["accent"]},
-        barmode="relative",
+        marker=dict(color=SEX_COLORS["Hombre"], line=dict(width=0.8, color=marker_line)),
+        customdata=np.column_stack([hombres, hombres / total * 100]),
+        hovertemplate="<b>%{y}</b><br>Hombres: %{customdata[0]:,.0f}<br>Participación: %{customdata[1]:.1f}%<extra></extra>",
+    )
+    fig.add_bar(
+        y=pivot.index.astype(str),
+        x=mujeres,
+        name="Mujeres",
+        orientation="h",
+        marker=dict(color=SEX_COLORS["Mujer"], line=dict(width=0.8, color=marker_line)),
+        customdata=np.column_stack([mujeres, mujeres / total * 100]),
+        hovertemplate="<b>%{y}</b><br>Mujeres: %{customdata[0]:,.0f}<br>Participación: %{customdata[1]:.1f}%<extra></extra>",
     )
     fig = fig_base_h(fig, title, subtitle)
-    fig.update_traces(
-        marker_line_width=0,
-        hovertemplate="<b>%{y}</b><br>%{customdata[0]}: %{x:,.0f}<extra></extra>",
-    )
-    # Eje X con valores absolutos
-    max_val = data[value_col].abs().max()
     fig.update_xaxes(
-        tickvals=[-max_val * 0.6, -max_val * 0.3, 0, max_val * 0.3, max_val * 0.6],
-        ticktext=[
-            fmt_metric(max_val * 0.6), fmt_metric(max_val * 0.3),
-            "0", fmt_metric(max_val * 0.3), fmt_metric(max_val * 0.6),
-        ],
+        range=[-tick_max * 1.15, tick_max * 1.15],
+        tickvals=tickvals,
+        ticktext=ticktext,
         title_text="",
         tickangle=0,
+        showgrid=True,
+        gridcolor=t["chart_grid"],
+        zeroline=True,
+        zerolinecolor=t["line"],
+        zerolinewidth=1.4,
     )
-    fig.update_yaxes(title_text="Grupo de edad")
-    fig.update_layout(height=max(420, len(AGE_ORDER) * 32 + 150))
-    # Línea central
-    fig.add_vline(x=0, line_width=1.5, line_color=ACTIVE_THEME["line"])
-    st.plotly_chart(fig, use_container_width=True)
+    fig.update_yaxes(
+        title_text="",
+        categoryorder="array",
+        categoryarray=AGE_ORDER,
+        tickfont=dict(color=t["soft_text"], size=12),
+    )
+    fig.update_layout(
+        barmode="relative",
+        bargap=0.22,
+        height=max(440, len(AGE_ORDER) * 32 + 170),
+        margin=dict(l=24, r=28, t=112, b=48),
+        legend=dict(
+            orientation="h",
+            x=0.5,
+            xanchor="center",
+            y=1.08,
+            yanchor="bottom",
+            bgcolor="rgba(0,0,0,0)",
+            font=dict(color=t["soft_text"], size=12),
+            traceorder="reversed",
+        ),
+        hovermode="y unified",
+    )
+    fig.add_annotation(
+        x=-tick_max * 0.72,
+        y=1.04,
+        xref="x",
+        yref="paper",
+        text="Hombres",
+        showarrow=False,
+        font=dict(size=11, color=t["muted"]),
+    )
+    fig.add_annotation(
+        x=tick_max * 0.72,
+        y=1.04,
+        xref="x",
+        yref="paper",
+        text="Mujeres",
+        showarrow=False,
+        font=dict(size=11, color=t["muted"]),
+    )
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, "responsive": True})
 
 
 # ---------------------------------------------------------------------------
@@ -1325,73 +1441,46 @@ def view_resumen(df_context, df_dep, context_label):
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 
-    # Tendencia principal + mini-cards
+    # Tendencia principal a ancho completo (las mini-cards laterales duplicaban KPIs)
     render_section("Tendencia de indicadores laborales", "Serie mensual — TD, TO y TGP ponderados con FEX_C18")
-    lead, side = st.columns([1.9, 1], gap="large")
+    trend = df_context.sort_values("periodo")
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    with lead:
-        trend = df_context.sort_values("periodo")
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-        
-        color_map = {"TD": t["accent"], "TO": t["accent_2"], "TGP": t["soft_text"]}
-        
-        # TGP y TO en eje principal (Eje Y Izquierdo)
-        for ind in ["TGP", "TO"]:
-            fig.add_trace(go.Scatter(
-                x=trend["periodo"], y=trend[ind], name=ind,
-                mode="lines",
-                line=dict(color=color_map[ind], width=2, shape="spline"),
-                hovertemplate=f"<b>{ind}</b>: %{{y:.1f}}%<extra></extra>"
-            ), secondary_y=False)
-            
-        # TD en eje secundario (Eje Y Derecho) para apreciar su volatilidad
+    color_map = {"TD": BT_NAVY, "TO": BT_BLUE, "TGP": BT_MINT}
+
+    for ind in ["TGP", "TO"]:
         fig.add_trace(go.Scatter(
-            x=trend["periodo"], y=trend["TD"], name="TD",
+            x=trend["periodo"], y=trend[ind],
+            name=f"{ind} — {'Participación' if ind == 'TGP' else 'Ocupación'}",
             mode="lines",
-            line=dict(color=color_map["TD"], width=3, shape="spline"),
-            fill="tozeroy",
-            fillcolor=hex_to_rgba(t["accent"], 0.05),
-            hovertemplate="<b>TD</b>: %{y:.1f}%<extra></extra>"
-        ), secondary_y=True)
+            line=dict(color=color_map[ind], width=2.2, shape="spline"),
+            hovertemplate=f"<b>{ind}</b>: %{{y:.1f}}%<br>%{{x|%b %Y}}<extra></extra>"
+        ), secondary_y=False)
 
-        fig = fig_base(fig, "Dinámica Laboral (Doble Eje)", f"Contexto: {context_label}")
-        fig.update_yaxes(title_text="TO / TGP (%)", ticksuffix="%", secondary_y=False)
-        fig.update_yaxes(
-            title_text="TD (%)",
-            ticksuffix="%",
-            secondary_y=True,
-            showgrid=False,
-            tickfont=dict(color=t["soft_text"], size=11),
-            title_font=dict(color=t["muted"], size=11),
-        )
-        fig = add_eventos_geih(fig, t)
-        st.plotly_chart(fig, use_container_width=True)
+    fig.add_trace(go.Scatter(
+        x=trend["periodo"], y=trend["TD"], name="TD — Desempleo",
+        mode="lines",
+        line=dict(color=color_map["TD"], width=3, shape="spline"),
+        fill="tozeroy",
+        fillcolor=hex_to_rgba(BT_NAVY, 0.08),
+        hovertemplate="<b>TD</b>: %{y:.1f}%<br>%{x|%b %Y}<extra></extra>"
+    ), secondary_y=True)
 
+    fig = fig_base(fig, "Dinámica laboral mensual", f"Doble eje · contexto: {context_label}")
+    fig.update_yaxes(title_text="TO / TGP (%)", ticksuffix="%", secondary_y=False)
+    fig.update_yaxes(
+        title_text="TD (%)", ticksuffix="%", secondary_y=True, showgrid=False,
+        tickfont=dict(color=t["soft_text"], size=11),
+        title_font=dict(color=t["muted"], size=11),
+    )
+    fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+    fig.update_layout(height=380)
+    fig = add_eventos_geih(fig, t)
+    st.plotly_chart(fig, use_container_width=True)
 
-    with side:
-        tgp_val = f"{row.get('TGP', 0):.1f}%"
-        to_val = f"{row.get('TO', 0):.1f}%"
-        desoc_val = fmt_metric(row.get("desocupados_exp", 0))
-        ingreso_val = f"${fmt_metric(row.get('ingreso_mediano', 0))}" if row.get("ingreso_mediano") else "s/d"
-
-        for label, val, foot in [
-            ("Tasa de participación (TGP)", tgp_val, "Fuerza de trabajo / PET × 100"),
-            ("Tasa de ocupación (TO)", to_val, "Ocupados / PET × 100"),
-            ("Desocupados", desoc_val, "Personas que buscan empleo activamente"),
-            ("Ingreso mediano", ingreso_val, "COP corrientes · Ocupados con P6500"),
-        ]:
-            st.markdown(
-                f"<div class='mini-card' style='margin-bottom:0.55rem'>"
-                f"<div class='mini-label'>{label}</div>"
-                f"<div class='mini-value'>{val}</div>"
-                f"<div class='mini-foot'>{foot}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-
-    # Comparativo departamental
+    # Comparativo departamental: prioridad de política pública = mayor desempleo
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-    render_section("Comparativo departamental", "Último período disponible por dimensión departamental")
+    render_section("Prioridades territoriales", "Departamentos con mayor presión laboral · último período")
     if df_dep.empty or "DPTO_label" not in df_dep.columns:
         placeholder(
             "El comparativo departamental aparecerá al regenerar el parquet<br>"
@@ -1406,41 +1495,46 @@ def view_resumen(df_context, df_dep, context_label):
         )
         left, right = st.columns(2, gap="large")
         with left:
-            d = dep.sort_values("TD").head(12)
+            d = dep.sort_values("TD", ascending=False).head(12).sort_values("TD")
             d["txt"] = d["TD"].map(lambda x: f"{x:.1f}%")
             fig = px.bar(
                 d, x="TD", y="DPTO_label", orientation="h",
-                text="txt",
-                color="TD",
-                color_continuous_scale=[[0, t["accent_2"]], [1, t["accent"]]],
+                text="txt", color="TD",
+                color_continuous_scale=BLUE_TEAL_SCALE,
             )
-            fig = fig_base_h(fig, "TD por departamento", "12 con menor desempleo · menor a mayor")
+            fig = fig_base_h(fig, "Mayor desempleo (TD)", "Top 12 departamentos · ascendente")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_coloraxes(showscale=False)
             fig.update_xaxes(ticksuffix="%")
-            fig.update_layout(height=max(380, len(d) * 32 + 140))
+            fig.update_layout(height=max(420, len(d) * 32 + 150))
             st.plotly_chart(fig, use_container_width=True)
         with right:
-            d2 = dep.sort_values("TO", ascending=False).head(12).sort_values("TO")
+            d2 = dep.sort_values("TO").head(12).sort_values("TO", ascending=False)
             d2["txt"] = d2["TO"].map(lambda x: f"{x:.1f}%")
             fig = px.bar(
                 d2, x="TO", y="DPTO_label", orientation="h",
-                text="txt",
-                color="TO",
-                color_continuous_scale=[[0, t["accent"]], [1, t["accent_2"]]],
+                text="txt", color="TO",
+                color_continuous_scale=BLUE_TEAL_SCALE,
             )
-            fig = fig_base_h(fig, "TO por departamento", "12 con mayor ocupación · menor a mayor")
+            fig = fig_base_h(fig, "Menor ocupación (TO)", "12 departamentos con menor TO · descendente")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_coloraxes(showscale=False)
             fig.update_xaxes(ticksuffix="%")
-            fig.update_layout(height=max(380, len(d2) * 32 + 140))
+            fig.update_layout(height=max(420, len(d2) * 32 + 150))
             st.plotly_chart(fig, use_container_width=True)
 
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-        render_map_module(df_dep, "TD", "resumen", "Mapa regional")
+        render_section("Mapa regional", "Cambia el indicador para ver la geografía del mercado")
+        render_map_module(df_dep, "TD", "resumen", "")
 
-    render_interpretation("El mercado laboral colombiano muestra una disparidad territorial profunda: mientras que las capitales andinas centralizan la ocupación formal, las zonas periféricas presentan tasas de desempleo de dos dígitos. Busque los picos históricos en el cambio GEIH 2022.")
+    render_interpretation(
+        "La tendencia muestra una <b>TD</b> que oscila alrededor del 10% nacional, "
+        "mientras la <b>TO</b> y la <b>TGP</b> avanzan con menor volatilidad por encima del 55%. "
+        "Territorialmente, los departamentos del Pacífico y la frontera oriental concentran "
+        "la mayor presión laboral; las regiones andinas centrales sostienen la ocupación.",
+        title="Lectura del periodo",
+    )
 
 
 
@@ -1475,7 +1569,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             fig = px.bar(
                 edu, x="poblacion_total_exp", y="P3042_label", orientation="h",
                 text="txt",
-                color_discrete_sequence=[t["accent"]],
+                color_discrete_sequence=[BT_BLUE],
             )
             fig = fig_base_h(fig, "Población por nivel educativo", "Promedio del periodo · P3042")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1496,7 +1590,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
                 civil.sort_values("poblacion_total_exp"),
                 x="poblacion_total_exp", y="P6070_label", orientation="h",
                 text="txt",
-                color_discrete_sequence=[t["accent_3"]],
+                color_discrete_sequence=[BT_TEAL],
             )
             fig = fig_base_h(fig, "Estado civil", "P6070 · promedio del periodo")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1514,7 +1608,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
                 values="poblacion_total_exp",
                 hole=0.58,
                 color="P3271_label",
-                color_discrete_map={"Hombre": t["soft_text"], "Mujer": t["accent"]},
+                color_discrete_map=SEX_COLORS,
             )
             fig = fig_base(fig, "Distribución por sexo", "P3271 · promedio del periodo")
             fig.update_traces(
@@ -1535,7 +1629,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
                 names="CLASE_label",
                 values="poblacion_total_exp",
                 hole=0.58,
-                color_discrete_sequence=[t["accent_2"], t["accent_3"]],
+                color_discrete_sequence=[BT_NAVY, BT_PALE],
             )
             fig = fig_base(fig, "Urbano vs. Rural", "CLASE · promedio del periodo")
             fig.update_traces(
@@ -1601,7 +1695,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             fig = px.bar(
                 sec, x="ocupados_exp", y="RAMA2D_R4_label", orientation="h",
                 text="txt",
-                color_discrete_sequence=[t["accent"]],
+                color_discrete_sequence=[BT_BLUE],
             )
             fig = fig_base_h(fig, "Ocupados por rama de actividad", "CIIU Rev.4 a 2 dígitos · menor a mayor")
             fig.update_traces(
@@ -1639,7 +1733,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
         fig = px.bar(
             inf_sec, x="tasa_informalidad", y="RAMA2D_R4_label", orientation="h",
             text="txt",
-            color_discrete_sequence=[t["accent_3"]],
+            color_discrete_sequence=[BT_TEAL],
         )
         fig = fig_base_h(fig, "Tasa de informalidad por rama", "Top 10 · menor a mayor · DANE 2022")
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1648,9 +1742,11 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
         st.plotly_chart(fig, use_container_width=True)
         
         render_interpretation(
-            "La informalidad laboral en Colombia es estructural, oscilando entre el 55% y 60% a nivel nacional. "
-            "Se observa una concentración crítica en los sectores de agricultura, ganadería y comercio menor, "
-            "donde la falta de afiliación al sistema contributivo es la norma."
+            "La informalidad laboral en Colombia es estructural: oscila entre 55% y 60% a nivel nacional. "
+            "La concentración crítica está en agricultura, ganadería y comercio menor, donde la falta de "
+            "afiliación al sistema contributivo es la norma. Cualquier política de formalización debe "
+            "atacar primero estos sectores.",
+            title="Lectura de informalidad",
         )
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
@@ -1672,7 +1768,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
                 pos, x="ocupados_exp", y="label_display", orientation="h",
                 text="txt",
                 custom_data=["P6430_label"],
-                color_discrete_sequence=[t["accent_3"]],
+                color_discrete_sequence=[BT_TEAL],
             )
             fig = fig_base_h(fig, "Posición ocupacional", "P6430 · menor a mayor")
             fig.update_traces(
@@ -1700,7 +1796,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
                 city, x="ocupados_exp", y="AREA_label", orientation="h",
                 text="txt",
                 color="ocupados_exp",
-                color_continuous_scale=[[0, t["accent"]], [1, t["accent_2"]]],
+                color_continuous_scale=BLUE_TEAL_SCALE,
             )
             fig = fig_base_h(fig, "Ocupados por ciudad", "Top 12 áreas metropolitanas · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1717,7 +1813,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             d = edu.sort_values("ocupados_exp")
             d["txt"] = d["ocupados_exp"].map(fmt_metric)
             fig = px.bar(d, x="ocupados_exp", y="P3042_label", orientation="h", text="txt",
-                         color_discrete_sequence=[t["accent"]])
+                         color_discrete_sequence=[BT_BLUE])
             fig = fig_base_h(fig, "Ocupados por nivel educativo", "P3042 · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_layout(height=max(360, len(d) * 34 + 140))
@@ -1726,7 +1822,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             d2 = edu.sort_values("ingreso_mediano")
             d2["txt"] = d2["ingreso_mediano"].map(lambda x: f"${fmt_metric(x)}")
             fig = px.bar(d2, x="ingreso_mediano", y="P3042_label", orientation="h", text="txt",
-                         color_discrete_sequence=[t["accent_2"]])
+                         color_discrete_sequence=[BT_TEAL])
             fig = fig_base_h(fig, "Ingreso mediano por nivel educativo", "COP corrientes · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_xaxes(tickprefix="$", separatethousands=True)
@@ -1739,18 +1835,13 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             "📚",
         )
 
-    st.markdown(f"""
-    <div class="interpretation-block">
-        <div class="interpretation-title">💡 Análisis Estratégico de Ocupación</div>
-        <div class="interpretation-text">
-            La estructura del mercado laboral colombiano en esta zona muestra una alta dependencia del sector 
-            <b>Comercio y Reparación</b>. La tasa de informalidad, calculada bajo los nuevos parámetros del DANE 2022, 
-            sugiere que una gran parte del empleo universitario está migrando a cuentas propias (independientes). 
-            Se recomienda vigilar el <b>Ingreso Mediano</b>: si la TO sube pero el ingreso baja, estamos ante una 
-            precarización del empleo local.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    render_interpretation(
+        "El empleo se concentra en <b>comercio, reparación y servicios</b>, sectores con tasa de informalidad "
+        "estructural superior al 50%. Cuando la TO sube pero el ingreso mediano se estanca o cae en términos "
+        "reales, hay señal de precarización: más personas trabajando, peor remuneradas. La distribución por "
+        "posición ocupacional (cuenta propia vs. asalariado) confirma esta tendencia hacia la informalidad.",
+        title="Lectura ocupacional",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1805,7 +1896,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
                 city, x="desocupados_exp", y="AREA_label", orientation="h",
                 text="txt",
                 color="desocupados_exp",
-                color_continuous_scale=[[0, t["accent_3"]], [1, t["negative"]]],
+                color_continuous_scale=BLUE_TEAL_SCALE,
             )
             fig = fig_base_h(fig, "Desocupados por ciudad", "Top 12 áreas metropolitanas · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1828,7 +1919,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
         fig = px.bar(
             edu, x="desocupados_exp", y="P3042_label", orientation="h",
             text="txt",
-            color_discrete_sequence=[t["accent_3"]],
+            color_discrete_sequence=[BT_TEAL],
         )
         fig = fig_base_h(fig, "Desocupados por nivel educativo", "P3042 · menor a mayor")
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1838,7 +1929,13 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         placeholder("Educación de desocupados sin datos. Agregar <code>P3042</code> al ETL.", "📚")
 
-    render_interpretation("El desempleo en Colombia es altamente concentrado: observe que 5 de las 23 áreas metropolitanas suelen agrupar más del 40% de los desocupados totales. La educación técnica aparece como un refugio ante el desempleo de larga duración.")
+    render_interpretation(
+        "El desempleo está concentrado: pocas áreas metropolitanas suelen agrupar buena parte de los "
+        "desocupados totales. La pirámide muestra un sesgo hacia jóvenes 15-28, especialmente mujeres. "
+        "Por nivel educativo, los desocupados se distribuyen en media y técnica con una cola universitaria "
+        "no despreciable — señal de subutilización del capital humano formado.",
+        title="Lectura del desempleo",
+    )
 
 
 
@@ -1865,7 +1962,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
             serie = df_sexo.groupby(["periodo", "P3271_label"], as_index=False)["TD"].mean()
             fig = px.line(
                 serie, x="periodo", y="TD", color="P3271_label",
-                color_discrete_map={"Hombre": t["soft_text"], "Mujer": t["accent"]},
+                color_discrete_map=SEX_COLORS,
                 line_shape="spline",
             )
             fig = fig_base(fig, "Brecha de género en TD", "Serie mensual · Mujer vs. Hombre")
@@ -1887,7 +1984,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
                 edad, x="grupo_edad_brecha", y="TD",
                 text="txt",
                 color="grupo_edad_brecha",
-                color_discrete_sequence=[t["accent_2"], t["accent_3"]],
+                color_discrete_sequence=[BT_BLUE, BT_MINT],
             )
             fig = fig_base(fig, "Brecha etaria en TD", "Jóvenes 15-28 vs. Adultos 29+")
             fig.update_traces(textposition="outside", marker_line_width=0)
@@ -1896,7 +1993,13 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
             fig.update_layout(showlegend=False)
             st.plotly_chart(fig, use_container_width=True)
     
-    render_interpretation("La pirámide poblacional evidencia el bono demográfico: una base de jóvenes (15-29 años) que presiona el mercado laboral. En las zonas urbanas, la transición a una estructura envejecida es más rápida que en las rurales.")
+    render_interpretation(
+        "La <b>TD femenina</b> es sistemáticamente superior a la masculina en todo el periodo: la diferencia "
+        "promedia entre 3 y 5 puntos porcentuales. La <b>brecha etaria</b> es aún más severa: la TD juvenil "
+        "(15-28) duplica con frecuencia a la de los mayores de 29, evidenciando barreras de entrada al primer "
+        "empleo formal. Ambas brechas deben leerse junto con la TGP, no aisladas de la inactividad por desaliento.",
+        title="Lectura de brechas",
+    )
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Comparativa regional", "TD departamental vs. promedio nacional · último período")
@@ -1922,7 +2025,11 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
             dep, x="brecha", y="DPTO_label", orientation="h",
             text="txt",
             color="brecha",
-            color_continuous_scale=[[0, t["positive"]], [0.5, t["accent_3"]], [1, t["negative"]]],
+            color_continuous_scale=[
+                [0, BT_MINT],
+                [0.5, BT_PALE],
+                [1, BT_NAVY],
+            ],
         )
         fig = fig_base_h(fig, "Brecha departamental vs. nacional", f"Referencia nacional: {nacional_td:.1f}% · menor a mayor")
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
@@ -1935,109 +2042,382 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap-lg'></div>", unsafe_allow_html=True)
         render_section("Mapa de distribución regional", "Selecciona el indicador que quieres comparar por departamento")
-        render_map_module(df_dep, "TD", "brechas", "Mapa regional")
+        render_map_module(df_dep, "TD", "brechas", "")
 
-    render_interpretation("Las brechas de género son estructurales: la TGP femenina es sistemáticamente inferior a la masculina en todos los departamentos. Esta brecha de participación es el principal desafío para la productividad nacional.")
+    render_interpretation(
+        "El comparativo regional separa departamentos por encima y por debajo del promedio nacional. "
+        "Los departamentos del Pacífico (Chocó, Quibdó) y la frontera oriental tienden a sostener brechas "
+        "positivas (TD muy por encima de la media), mientras Bogotá D.C., Antioquia y Cundinamarca "
+        "compensan a la baja. Estas brechas son persistentes año a año, no coyunturales.",
+        title="Lectura territorial",
+    )
 
 
 # ---------------------------------------------------------------------------
 # Vista 6: Metodología
 # ---------------------------------------------------------------------------
-def view_instrucciones():
-    st.markdown("### 📖 Guía de Uso Estratégico")
-    st.info("Este dashboard está diseñado para transformar microdatos técnicos del DANE en decisiones curriculares y estratégicas. Seleccione su perfil para ver recomendaciones.")
-
+def view_instrucciones(df_nac=None, df_dep=None):
     t = ACTIVE_THEME
-    
-    with st.expander("🛠️ Facultades de Ingeniería y Tecnología", expanded=True):
-        st.markdown(f"""
-        <div style='color:{t["text"]};'>
-        <ul>
-            <li><b>Optimización de Programas:</b> Analice la 'Estructura Sectorial' en la pestaña <i>Ocupados</i> para identificar si los sectores de Información, Comunicaciones y Transformación Digital están creciendo.</li>
-            <li><b>Brechas de Género:</b> Observe la distribución de ocupados en sectores STEM para proponer políticas de retención y fomento a la mujer ingeniera.</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
 
-    with st.expander("🧬 Ciencias Sociales, Salud y Humanidades", expanded=False):
-        st.markdown(f"""
-        <div style='color:{t["text"]};'>
-        <ul>
-            <li><b>Retorno de la Educación:</b> Utilice las gráficas de ingresos en la pestaña <i>Ocupados</i> para observar el enorme diferencial salarial del "Nivel Universitario/Especializado" respecto a la Media/Técnica dentro del sector de Actividades de Salud.</li>
-            <li><b>Tasas de Formalidad:</b> Las estadísticas evidencian directamente si las regulaciones de contratos por prestación de servicios están sumiendo el mercado local en niveles perjudiciales de informalidad algorítmica.</li>
-        </ul>
+    st.markdown(
+        f"""
+        <div style="margin-bottom:1.1rem">
+          <div class="topbar-title" style="font-size:1.85rem; margin-bottom:0.35rem;">
+            Cómo leer este tablero
+          </div>
+          <div class="topbar-sub" style="max-width:62rem;">
+            Una guía corta para que cualquier lector — facultad, decanatura, periodista económico
+            o analista de política — extraiga decisiones útiles en menos de cinco minutos.
+          </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-    with st.expander("🏛️ Decanaturas, Planeación y Direcciones de Programa", expanded=False):
-        st.markdown(f"""
-        <div style='color:{t["text"]};'>
-        <ul>
-            <li><b>Decisiones frente al Bono Demográfico Joven:</b> En la vista <i>Brechas</i>, contraste la Tasa de Desempleo (TD) de egresados recientes frente a los adultos. Justifique convenios urgentes de "Primer Empleo" si la brecha es anómala.</li>
-            <li><b>Entendiendo la Inactividad Subyacente (FFT):</b> En la pestaña de <i>Desocupados</i>, advierta por qué en algunas ciudades disminuye la Tasa de Desempleo (TD) no por aumentos en el empleo, sino porque la mujer joven transiciona al desaliento (pasan a labores del hogar). Mida el impacto adverso y proponga extensiones universitarias.</li>
-        </ul>
+    # Bloque 1: filtros y mapa de vistas
+    render_section("1 · Filtros y vistas", "Cómo orientarte en el dashboard")
+    c1, c2 = st.columns(2, gap="large")
+    with c1:
+        st.markdown(
+            f"""
+            <div class='mini-card'>
+              <div class='mini-label' style='color:{BT_DEEP}'>Filtros globales</div>
+              <ul style='color:{t["soft_text"]}; line-height:1.6; margin:0.4rem 0 0 1rem; padding:0;'>
+                <li><b>Periodo:</b> selecciona el año o "Todos" para ver la serie completa.</li>
+                <li><b>Nivel territorial:</b> elige Departamento o Ciudad para enfocar el contexto.</li>
+                <li><b>Ubicación:</b> aparece según el nivel anterior (32 dptos. o 23 áreas metropolitanas).</li>
+              </ul>
+              <div class='mini-foot' style='margin-top:0.55rem'>
+                Las vistas <b>Guía Usuario</b> y <b>Metodología</b> no usan filtros: son material de referencia.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with c2:
+        st.markdown(
+            f"""
+            <div class='mini-card'>
+              <div class='mini-label' style='color:{BT_DEEP}'>Las 5 vistas analíticas</div>
+              <ul style='color:{t["soft_text"]}; line-height:1.6; margin:0.4rem 0 0 1rem; padding:0;'>
+                <li><b>Resumen:</b> KPIs nacionales, tendencia mensual y mapa territorial.</li>
+                <li><b>Población:</b> pirámide, educación, estado civil, urbano/rural.</li>
+                <li><b>Ocupados:</b> sectores, informalidad, ciudades e ingreso por educación.</li>
+                <li><b>Desocupados:</b> perfil del desempleo por sexo, edad, ciudad y nivel educativo.</li>
+                <li><b>Brechas:</b> género, edad 15-28 vs 29+, comparativa departamental vs. nacional.</li>
+              </ul>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Bloque 2: glosario rápido de indicadores
+    render_section("2 · Indicadores en 30 segundos", "Definiciones operativas DANE / OIT")
+    g1, g2, g3 = st.columns(3, gap="medium")
+    glossary = [
+        (g1, "TD", "Tasa de desempleo", "Desocupados ÷ PEA × 100", "Mide cuántos de los que buscan trabajo no lo encuentran."),
+        (g2, "TO", "Tasa de ocupación", "Ocupados ÷ PET × 100", "Qué proporción de la población en edad de trabajar tiene empleo."),
+        (g3, "TGP", "Tasa global de participación", "Fuerza de trabajo ÷ PET × 100", "Cuántas personas en edad de trabajar están activas (trabajando o buscando)."),
+    ]
+    for col, code, name, formula, desc in glossary:
+        with col:
+            st.markdown(
+                f"""
+                <div class='mini-card'>
+                  <div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.35rem;'>
+                    <div class='display-serif' style='font-size:1.7rem; font-weight:700; color:{BT_DEEP};'>{code}</div>
+                    <div style='color:{t["text"]}; font-weight:700; font-size:0.95rem;'>{name}</div>
+                  </div>
+                  <code style='background:{t["input_bg"]}; padding:0.2rem 0.45rem; border-radius:5px; font-size:0.8rem; color:{t["text"]}'>{formula}</code>
+                  <div class='mini-foot' style='margin-top:0.55rem;'>{desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    g4, g5, g6 = st.columns(3, gap="medium")
+    glossary2 = [
+        (g4, "Informalidad", "Tasa de informalidad", "Informales ÷ Ocupados × 100", "Trabajadores sin afiliación al sistema contributivo (regla DANE 2022)."),
+        (g5, "Ingreso mediano", "Mediana ponderada", "P6500 entre ocupados", "El valor del trabajador del medio: más robusto que el promedio."),
+        (g6, "FEX_C18", "Factor de expansión", "Peso muestral", "Convierte cada encuestado en miles de personas representadas."),
+    ]
+    for col, code, name, formula, desc in glossary2:
+        with col:
+            st.markdown(
+                f"""
+                <div class='mini-card'>
+                  <div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.35rem;'>
+                    <div class='display-serif' style='font-size:1.4rem; font-weight:700; color:{BT_DEEP};'>{code}</div>
+                  </div>
+                  <div style='color:{t["text"]}; font-weight:700; font-size:0.92rem; margin-bottom:0.3rem;'>{name}</div>
+                  <code style='background:{t["input_bg"]}; padding:0.2rem 0.45rem; border-radius:5px; font-size:0.8rem; color:{t["text"]}'>{formula}</code>
+                  <div class='mini-foot' style='margin-top:0.55rem;'>{desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # Bloque 3: rutas de lectura por perfil
+    render_section("3 · Rutas de lectura por perfil", "Por dónde empezar según tu rol")
+
+    rutas = [
+        (
+            "Facultades técnicas e ingeniería",
+            "STEM, formación dual, oferta académica",
+            [
+                "<b>Ocupados → Estructura sectorial:</b> identifica si Información, Comunicaciones y Manufactura crecen o se contraen.",
+                "<b>Brechas → Brecha de género:</b> evalúa retención de mujeres en sectores intensivos en ingeniería.",
+                "<b>Ocupados → Educación e ingresos:</b> compara el retorno salarial del nivel universitario vs. técnico.",
+            ],
+        ),
+        (
+            "Ciencias sociales, salud y humanidades",
+            "Política pública, salud, derecho, economía",
+            [
+                "<b>Ocupados → Informalidad:</b> identifica los sectores donde la prestación de servicios sustituye al contrato laboral.",
+                "<b>Brechas → Comparativa regional:</b> mide la heterogeneidad territorial del mercado laboral.",
+                "<b>Desocupados → Educación:</b> mide la subutilización del capital humano universitario.",
+            ],
+        ),
+        (
+            "Decanaturas y dirección de programa",
+            "Diseño curricular, convenios, planeación",
+            [
+                "<b>Brechas → Brecha etaria 15-28 vs 29+:</b> sustenta convenios de Primer Empleo y prácticas tempranas.",
+                "<b>Desocupados → Pirámide:</b> distingue entre desempleo abierto e inactividad por desaliento (clave en mujeres jóvenes).",
+                "<b>Resumen → Mapa regional:</b> prioriza territorios para extensión universitaria.",
+            ],
+        ),
+        (
+            "Periodismo económico y consultoría",
+            "Notas, informes, asesoría a empresa o gobierno",
+            [
+                "<b>Resumen → Tendencia laboral:</b> identifica quiebres y comparaciones interanuales.",
+                "<b>Brechas → Mapa regional:</b> base territorial para reportajes con enfoque local.",
+                "<b>Metodología:</b> referencias técnicas para citar correctamente las cifras.",
+            ],
+        ),
+    ]
+    for i in range(0, len(rutas), 2):
+        cols = st.columns(2, gap="large")
+        for j, col in enumerate(cols):
+            if i + j >= len(rutas):
+                break
+            title, sub, items = rutas[i + j]
+            li_html = "".join(f"<li style='margin-bottom:0.4rem;'>{x}</li>" for x in items)
+            with col:
+                st.markdown(
+                    f"""
+                    <div class='mini-card' style='margin-bottom:0.85rem;'>
+                      <div style='display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.15rem;'>
+                        <div class='display-serif' style='font-size:1.2rem; font-weight:600; color:{t["text"]};'>{title}</div>
+                      </div>
+                      <div class='mini-foot' style='margin-top:0; margin-bottom:0.6rem;'>{sub}</div>
+                      <ul style='color:{t["soft_text"]}; line-height:1.55; margin:0 0 0 1rem; padding:0; font-size:0.92rem;'>
+                        {li_html}
+                      </ul>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+    # Bloque 4: tips de lectura
+    render_section("4 · Buenas prácticas al interpretar", "Reglas para no malinterpretar las cifras")
+    st.markdown(
+        f"""
+        <div class='interpretation-block'>
+          <div class='interpretation-title'>Cinco reglas básicas</div>
+          <div class='interpretation-text'>
+            <ol style='margin:0.4rem 0 0 1.1rem; padding:0; line-height:1.65;'>
+              <li><b>TD baja no es siempre buena:</b> puede caer porque la gente deja de buscar empleo (sale de la PEA), no porque encuentre trabajo. Léela junto a la TGP.</li>
+              <li><b>Los KPIs son del último mes disponible:</b> el delta vs. periodo anterior compara mes vs. mes inmediato.</li>
+              <li><b>El ingreso es mediano, no promedio:</b> la mediana es robusta a outliers (millonarios o salarios muy bajos no la sesgan).</li>
+              <li><b>Toda cifra está expandida:</b> son personas representadas, no encuestadas. El factor es <code>FEX_C18</code>.</li>
+              <li><b>Las brechas son persistentes:</b> género, edad y geografía cambian poco mes a mes. Si ves un quiebre brusco, sospecha del dato antes que del fenómeno.</li>
+            </ol>
+          </div>
         </div>
-        """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def view_metodologia(df):
+    t = ACTIVE_THEME
     years = sorted(df["ano"].dropna().unique().tolist()) if "ano" in df.columns else []
     year_range = f"{years[0]}–{years[-1]}" if len(years) >= 2 else (str(years[0]) if years else "s/d")
 
-    st.markdown("### 🧬 Ficha Técnica y Metodología (DDI DANE)")
-    st.markdown("""
-    Este dashboard implementa el procesamiento de microdatos de la **Gran Encuesta Integrada de Hogares (GEIH) rediseñada (2022)**. 
-    A continuación, se detallan los parámetros técnicos bajo los cuales se estiman los indicadores.
-    """)
+    st.markdown(
+        f"""
+        <div style="margin-bottom:1.1rem">
+          <div class="topbar-title" style="font-size:1.85rem; margin-bottom:0.35rem;">
+            Ficha técnica
+          </div>
+          <div class="topbar-sub" style="max-width:62rem;">
+            Procesamiento de microdatos de la Gran Encuesta Integrada de Hogares (GEIH) rediseñada
+            del DANE para el período <b>{year_range}</b>. Toda cifra de este dashboard es trazable
+            hasta el código de variable original.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    c1, c2, c3 = st.columns(3, gap="small")
+    # Bloque 1: parámetros técnicos
+    render_section("Parámetros estadísticos", "Lo que necesitas saber antes de citar")
+    c1, c2, c3, c4 = st.columns(4, gap="small")
     for col, label, val, foot in [
-        (c1, "Marco Muestral", "Probabilístico", "Multietápico, estratificado y por conglomerados. Representativo de 23 ciudades y áreas metropolitanas."),
-        (c2, "Precisión Estadística", "CV < 5%", "Indicadores calculados para niveles con suficiencia muestral según el Coeficiente de Variación."),
-        (c3, "Factor de Expansión", "FEX_C18", "Uso estricto del factor de expansión post-rediseño 2022 para agregados nacionales y departamentales."),
+        (c1, "Fuente", "DANE GEIH", "Encuesta rediseñada (2022). Bases anuales consolidadas."),
+        (c2, "Marco muestral", "Probabilístico", "Multietápico, estratificado, por conglomerados. 23 áreas metropolitanas."),
+        (c3, "Precisión", "CV < 5%", "Indicadores publicados solo para niveles con suficiencia muestral."),
+        (c4, "Expansión", "FEX_C18", "Factor post-rediseño 2022. Toda cifra está expandida a personas."),
     ]:
         with col:
             st.markdown(
-                f"<div class='card'><div class='kpi-label'>{label}</div>"
-                f"<div class='mini-value' style='font-size:1.4rem'>{val}</div>"
-                f"<div class='kpi-foot'>{foot}</div></div>",
-                unsafe_allow_html=True,
-            )
-
-    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-    
-    col_a, col_b = st.columns(2, gap="large")
-    with col_a:
-        render_section("Definiciones Críticas (OIT/DANE)")
-        defs = [
-            ("OCI (Ocupados)", "Personas que trabajaron al menos una hora remunerada o sin remuneración en la semana de referencia."),
-            ("DSI (Desocupados)", "Personas sin empleo que realizaron actividades de búsqueda y están disponibles actualmente."),
-            ("FFT (Fuera de Fuerza de Trabajo)", "Personas que no están ni ocupadas ni desocupadas (estudiantes, hogar, jubilados)."),
-            ("Informalidad (DANE 2022)", "Métrica basada en Tamaño de Empresa (hasta 5), Seguridad Social y Oficio."),
-        ]
-        for term, defn in defs:
-            st.markdown(
-                f"<div class='mini-card' style='margin-bottom:0.4rem; border-left: 3px solid {ACTIVE_THEME['accent']}'>"
-                f"<div style='font-weight:700; color:{ACTIVE_THEME['accent']}; font-size:0.85rem'>{term}</div>"
-                f"<div style='color:{ACTIVE_THEME['soft_text']}; font-size:0.83rem; line-height:1.4'>{defn}</div>"
+                f"<div class='card'>"
+                f"<div class='kpi-label'>{label}</div>"
+                f"<div class='mini-value' style='font-size:1.3rem'>{val}</div>"
+                f"<div class='kpi-foot'>{foot}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
-            
-    with col_b:
-        render_section("Variables de Cruce")
-        st.markdown(f"""
-        <div style='color:{ACTIVE_THEME["soft_text"]}; font-size:0.9rem; line-height:1.6;'>
-        <ul>
-            <li><b>Variables Demográficas:</b> <code>P3271</code> (Sexo), <code>P6040</code> (Edad), <code>P6050</code> (Parentesco).</li>
-            <li><b>Nivel Educativo:</b> <code>P3042</code> (Último título), <code>P6175</code> (Asistencia escolar).</li>
-            <li><b>Fuerza Laboral:</b> <code>OCI</code>, <code>DSI</code> (Cálculo interno a partir de 16 variables de condición).</li>
-            <li><b>Ingresos:</b> <code>INGLABO</code> (Salario mensual deflactado).</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
 
-    st.warning("⚠️ **Nota:** Los datos de 2022 en adelante no son estrictamente comparables con series anteriores a 2021 debido al rediseño de la GEIH y el nuevo marco poblacional 2018.")
+    # Bloque 2: cobertura del dataset (un solo gráfico, ya no dos)
+    render_section("Cobertura procesada", f"Registros agregados por dimensión analítica · {year_range}")
+    coverage = (
+        df.groupby("dimension", as_index=False)
+        .size()
+        .rename(columns={"size": "registros"})
+        .sort_values("registros")
+    )
+    coverage["dimension_label"] = coverage["dimension"].str.replace("_", " ").str.title()
+    fig = px.bar(
+        coverage,
+        x="registros",
+        y="dimension_label",
+        orientation="h",
+        color="registros",
+        color_continuous_scale=BLUE_TEAL_SCALE,
+        text=coverage["registros"].map(lambda x: f"{x:,.0f}"),
+    )
+    fig = fig_base_h(fig, "Filas agregadas por dimensión", "Cada barra es una tabla independiente del parquet")
+    fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
+    fig.update_coloraxes(showscale=False)
+    fig.update_xaxes(title_text="Registros")
+    fig.update_yaxes(title_text="")
+    fig.update_layout(height=max(360, len(coverage) * 28 + 130), margin=dict(l=146, r=34, t=90, b=48))
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Bloque 3: definiciones operativas
+    render_section("Definiciones operativas (OIT / DANE)", "Cómo entender los términos técnicos")
+    defs = [
+        ("PET", "Población en edad de trabajar", "Personas de 15 años o más (criterio DANE post-2022)."),
+        ("PEA / FT", "Población económicamente activa", "Ocupados + desocupados. La 'fuerza de trabajo' del país."),
+        ("OCI", "Ocupados", "Personas que trabajaron al menos una hora remunerada o sin remuneración en la semana de referencia."),
+        ("DSI", "Desocupados", "Personas sin empleo que realizaron búsqueda activa y están disponibles."),
+        ("FFT", "Fuera de fuerza de trabajo", "Personas en edad de trabajar que ni trabajan ni buscan: estudiantes, hogar, jubilados, desalentados."),
+        ("Informalidad", "Tasa de informalidad (DANE 2022)", "Combina posición ocupacional, tamaño de empresa, afiliación a salud y pensión, registro mercantil, oficio y rama. Implementación en src/indicators.py."),
+    ]
+    cols = st.columns(2, gap="large")
+    for i, (code, name, desc) in enumerate(defs):
+        with cols[i % 2]:
+            st.markdown(
+                f"<div class='mini-card' style='margin-bottom:0.55rem; border-left: 4px solid {BT_DEEP};'>"
+                f"<div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.25rem;'>"
+                f"  <div class='display-serif' style='font-size:1.25rem; font-weight:700; color:{BT_DEEP};'>{code}</div>"
+                f"  <div style='color:{t['text']}; font-weight:700; font-size:0.92rem;'>{name}</div>"
+                f"</div>"
+                f"<div style='color:{t['soft_text']}; font-size:0.88rem; line-height:1.5'>{desc}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+
+    # Bloque 4: trazabilidad de variables
+    render_section("Trazabilidad de variables", "De qué columna del microdato sale cada cifra")
+    st.markdown(
+        f"""
+        <div class='mini-card' style='margin-bottom:0.7rem;'>
+          <table style='width:100%; border-collapse:collapse; font-size:0.88rem; color:{t["soft_text"]};'>
+            <thead>
+              <tr style='border-bottom:1px solid {t["line"]}; text-align:left;'>
+                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Indicador</th>
+                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Variables GEIH</th>
+                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Cálculo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>TD</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>DSI</code>, <code>FEX_C18</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Σ(DSI·FEX) ÷ Σ((OCI+DSI)·FEX) × 100</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>TO</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>P6040</code>, <code>FEX_C18</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Σ(OCI·FEX) ÷ Σ(PET·FEX) × 100, PET = P6040 ≥ 15</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>TGP</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>DSI</code>, <code>P6040</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Σ((OCI+DSI)·FEX) ÷ Σ(PET·FEX) × 100</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>Informalidad</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>P6430</code>, <code>P6920</code>, <code>P6090</code>, +13 más</td>
+                <td style='padding:0.5rem 0.6rem;'>Regla DANE en src/indicators.py</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>Ingreso mediano</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>P6500</code>, <code>FEX_C18</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Mediana ponderada por FEX entre ocupados</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>Sexo</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>P3271</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Sexo al nacer (post-rediseño; reemplaza P6020)</td>
+              </tr>
+              <tr style='border-bottom:1px solid {t["line"]};'>
+                <td style='padding:0.5rem 0.6rem;'><b>Edad / Pirámide</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>P6040</code></td>
+                <td style='padding:0.5rem 0.6rem;'>Quinquenios 15-19, 20-24 … 65+ (estándar OIT)</td>
+              </tr>
+              <tr>
+                <td style='padding:0.5rem 0.6rem;'><b>Sector</b></td>
+                <td style='padding:0.5rem 0.6rem;'><code>RAMA2D_R4</code></td>
+                <td style='padding:0.5rem 0.6rem;'>CIIU Rev.4 a 2 dígitos</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Bloque 5: notas críticas
+    render_section("Notas y advertencias", "Lo que debes citar al usar estas cifras")
+    st.markdown(
+        f"""
+        <div class='interpretation-block'>
+          <div class='interpretation-title'>Comparabilidad y supuestos</div>
+          <div class='interpretation-text'>
+            <ul style='margin:0.4rem 0 0 1.1rem; padding:0; line-height:1.65;'>
+              <li><b>Ruptura de serie:</b> los datos desde 2022 <b>no son comparables</b> con series anteriores a 2021.
+                  La GEIH fue rediseñada y se aplica el marco poblacional Censo 2018.</li>
+              <li><b>Variable de sexo:</b> a partir de 2022 se usa <code>P3271</code> (sexo al nacer);
+                  el código <code>P6020</code> del diseño anterior queda obsoleto.</li>
+              <li><b>Nivel educativo:</b> se usa <code>P3042</code> en lugar de <code>P6210</code> porque
+                  esta última no aparece en el encabezado de <code>geih_2025.csv</code>.</li>
+              <li><b>Ingreso:</b> se reporta como mediana ponderada en pesos corrientes, sin deflactar.
+                  Para series reales, ajusta por IPC fuera del dashboard.</li>
+              <li><b>Granularidad:</b> el parquet está en frecuencia mensual; no se reportan trimestres móviles.</li>
+              <li><b>Cita sugerida:</b> "Elaboración propia con microdatos de la GEIH-DANE,
+                  ponderados con FEX_C18".</li>
+            </ul>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2066,7 +2446,7 @@ vista = render_side_nav()
 
 page_shell = st.container()
 with page_shell:
-    hero_card = st.container(border=True)
+    hero_card = st.container(border=True, key="hero_filters_card")
     with hero_card:
         title_slot = st.container()
         filters_slot = st.container()
@@ -2122,7 +2502,7 @@ with body_slot:
     elif vista == "brechas":
         view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level)
     elif vista == "instrucciones":
-        view_instrucciones()
+        view_instrucciones(df_nac, df_dep)
     else:
         view_metodologia(df_all)
 

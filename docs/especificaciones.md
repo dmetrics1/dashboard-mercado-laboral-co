@@ -1,6 +1,6 @@
 # Especificaciones de Diseño: Dashboard de Mercado Laboral (GEIH)
 
-Última revisión: 2026-04-22.
+Última revisión: 2026-04-25.
 
 Este documento refleja el estado actual del código y del parquet procesado
 `data/processed/indicadores_mensuales.parquet`: 6.160 filas, 25 columnas y 12
@@ -28,13 +28,59 @@ frecuencia mensual.
 | Instrucciones | listo | Guía de lectura para facultades y programas. No usa filtros. |
 | Metodología | listo | Ficha técnica, glosario y trazabilidad de variables. No usa filtros. |
 
-### Criterios visuales vigentes
+### Criterios visuales vigentes (2026-04-25)
 
-- El modo claro debe usar cajas visibles con fondo sólido, borde y sombra sutil; no debe depender solo del fondo general de página.
-- El modo oscuro conserva la misma estructura de contenedores, con contraste moderado para no saturar la lectura.
-- Los gráficos Plotly se muestran dentro de contenedores propios para separar cada visual del fondo.
-- El mapa departamental usa coroplético con contexto territorial, escala verde/azul, zoom medio-cercano y leyenda interna para evitar recortes.
-- La primera vista se mantiene compacta: filtros, KPIs y tendencia deben aparecer con el menor espacio vertical razonable.
+**Tipografía dual:**
+- Display: `Fraunces` (serif editorial, opsz 9–144) para KPIs, títulos de vista y mini-values.
+- Body: `Manrope` (humanista sans) para todo el texto de soporte, etiquetas, pies y navegación.
+- Se prohíbe explícitamente el uso de Inter, Roboto y Space Grotesk (clichés de AI-generados).
+
+**Paleta unificada azul-teal (BLUE_TEAL_DISCRETE):**
+- `#1E2D55` (BT_NAVY), `#27638A` (BT_DEEP), `#338CA1` (BT_BLUE), `#51A6AE` (BT_TEAL),
+  `#7BBDBF` (BT_MINT), `#A2D0D2` (BT_PALE), `#D5EAEB` (BT_ICE).
+- Los acentos de UI (sidebar activo, stripe de card, borde de interpretation-block) usan
+  esta misma escala. No hay morado ni color externo al sistema.
+
+**Modo claro — familia cromática cálida (arena/lino):**
+- Fondo de app: `#F4EFE6`.
+- Panel/card bg: `#FBF8F1` — usado uniformemente en KPI cards, contenedores de gráfico,
+  sidebar y tarjeta de filtros (todos en el mismo tono para coherencia).
+- Bordes y sombras en tono café cálido (`rgba(139,110,75,...)`) en lugar de azul-negro.
+- Dropdowns y selects: fondo `#F5F0E6`, borde cálido.
+
+**Modo oscuro:**
+- Fondo de app: gradiente profundo `#080c1a → #04060f`.
+- Panel bg: `rgba(15,21,40,0.96)`, borde `rgba(255,255,255,0.10)`.
+- Estructura idéntica al claro; solo cambian los valores de color.
+
+**Contenedores de gráficos:**
+- `[data-testid="stPlotlyChart"]` lleva `border`, `border-radius: 10px`, `padding` y
+  `box-shadow` — cumple el criterio de "gráficos dentro de contenedores propios".
+
+**KPI cards:**
+- Stripe horizontal de 3 px en degradado BT_NAVY → BT_TEAL al tope de cada `.card`.
+- KPI value en Fraunces 700, 2.15rem; mini-value en Fraunces 700, 1.55rem.
+
+**Section headers:**
+- Usan `border-top` separador + `padding-top` generoso (0.85rem) entre secciones.
+- Título en Fraunces 600, 1.32rem.
+
+**Interpretation blocks:**
+- Borde izquierdo de 4 px en BT_DEEP.
+- Título con prefijo `—` generado por CSS `::before`.
+- Tono sobrio, datos concretos, sin emojis.
+
+**Reglas de no-redundancia:**
+- `view_resumen`: tendencia a ancho completo; mini-cards laterales eliminadas (duplicaban KPIs).
+- Comparativo departamental: muestra los de **mayor** TD/menor TO (relevante para política),
+  no los de menor TD.
+- `view_instrucciones`: sin gráfico "Pulso nacional" (repetía KPIs del Resumen).
+- Todas las `render_interpretation()` reescritas para corresponder exactamente a los gráficos
+  visibles en cada vista.
+
+**Mapa departamental:**
+- Coroplético con escala BLUE_TEAL_30, `carto-positron` en claro / `carto-darkmatter` en oscuro.
+- Panel de control lateral con extremos Mayor/Menor calculados en tiempo real.
 
 ## 3. Salida analítica actual
 
@@ -58,7 +104,7 @@ frecuencia mensual.
 | sector | `RAMA2D_R4_label` | 659 |
 | clase | `CLASE_label` | 96 |
 | estado_civil | `P6070_label` | 288 |
-| educacion | `P3042_label` | 553 |
+| educacion | `P3042_label` | 653 |
 | posicion_ocupacional | `P6430_label` | 384 |
 
 ## 4. Matriz de variables requeridas

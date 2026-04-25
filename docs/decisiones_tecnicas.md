@@ -85,3 +85,22 @@ Ultima revision: 2026-04-22.
 - Los graficos Plotly se renderizan sobre contenedores con fondo, borde y sombra suave para que los valores sean legibles en modo claro y oscuro.
 - La dimension `departamento` se genera en `src/etl.py` con `DPTO_label`.
 - La vista `Instrucciones` queda separada de las vistas filtrables y sirve como guia de uso para facultades y programas.
+
+---
+
+## DT-010 - Rediseno visual editorial (2026-04-25)
+
+**Decision:** refactorizacion completa del sistema visual de `app/main.py` siguiendo principios de la skill `frontend-design` (anthropics/skills): direccion estetica comprometida, tipografia distintiva, paleta coherente, sin estetica generica de IA.
+
+**Razon:** auditoria de diseno detecto inconsistencias entre el acento de UI (morado) y la paleta de graficos (azul-teal), falta de contenedores visibles para graficos en modo claro, mini-cards redundantes que triplicaban la misma informacion, e interpretaciones incorrectas que citaban graficos inexistentes en la vista activa.
+
+**Implicaciones de implementacion:**
+
+- **Tipografia dual:** `Fraunces` (serif editorial) para KPIs/titulos + `Manrope` (humanista sans) para body. Se eliminan Inter, Roboto y fuentes genericas.
+- **Paleta unificada:** acento morado (`#7C3AED`) eliminado. Todo el sistema UI usa la escala BLUE_TEAL_DISCRETE. Modo claro en familia cromatica calida arena/lino (`#F4EFE6` base).
+- **Contenedores de graficos:** `[data-testid="stPlotlyChart"]` recupera borde, padding y sombra. Sidebar y tarjeta de filtros usan el mismo `panel_bg` que las KPI cards para coherencia total.
+- **KPI cards:** stripe horizontal 3px en degradado BT_NAVY→BT_TEAL al tope de cada card.
+- **Eliminacion de redundancias:** mini-cards laterales de `view_resumen` eliminadas (duplicaban KPIs y extremos del mapa). Comparativo departamental cambiado a "mayor TD" en lugar de "menor TD". "Pulso nacional" de `view_instrucciones` eliminado (repetia KPIs del Resumen).
+- **Vistas Instrucciones y Metodologia:** reescritas completamente. Instrucciones incluye glosario de 6 indicadores, 4 rutas de lectura por perfil (Ingenieria, Ciencias Sociales, Decanaturas, Periodismo) y 5 reglas de interpretacion. Metodologia incluye tabla de trazabilidad indicador→variable→calculo.
+- **Interpretaciones corregidas:** cada `render_interpretation()` corresponde exactamente a los graficos visibles en su vista. Eliminado texto sobre "piramide poblacional" en vista Brechas y "esta zona" en Ocupados.
+- **Codigo muerto:** `BAR_COLORS_DARK` y `BAR_COLORS_LIGHT` (identicos, sin uso) eliminados.
