@@ -238,6 +238,8 @@ Ver `docs/decisiones_tecnicas.md`. Resumen:
 - **DT-005** RecodificaciÃ³n OpciÃ³n 1: conservar + `_label`.
 - **DT-006** Parquet para tabular, JSON solo para mapeos.
 - **DT-011** Eliminación de indentación en `st.markdown`. Evita que el HTML se interprete como bloques de código Markdown.
+- **DT-012** Botón 'Limpiar Filtros' mediante callbacks para evitar errores de estado.
+- **DT-013** Refuerzo de contraste CSS para selectores en modo claro.
 
 ---
 
@@ -263,7 +265,9 @@ NO incluir en esta versiÃ³n:
 - `.gitignore`
 - `requirements.txt`
 - `docs/protocolo_diccionario.md` (Ã­ntegro)
-- `docs/decisiones_tecnicas.md` (DT-001 a DT-011)
+- `docs/decisiones_tecnicas.md` (DT-001 a DT-013)
+- **DT-012** Botón 'Limpiar Filtros' mediante callbacks para evitar errores de estado.
+- **DT-013** Refuerzo de contraste CSS para selectores en modo claro.
 - `src/config.py` (con mapeos complementarios)
 - `src/dictionary.py` (implementaciÃ³n completa del protocolo)
 - `data/reference/colombia_departamentos.geojson`

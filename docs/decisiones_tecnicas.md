@@ -110,3 +110,19 @@ Ultima revision: 2026-04-25.
 **Decision:** remover toda indentación (espacios iniciales) dentro de las f-strings multilínea pasadas a `st.markdown` en los componentes UI (`render_section`, `render_interpretation`, `render_kpi`, etc.).
 
 **Razon:** el procesador de Markdown de Streamlit interpreta líneas con 4 o más espacios iniciales como bloques de código. Esto causaba que el HTML inyectado se renderizara como texto literal (ej. el tag `</div>` huérfano) dentro de cajas con fondo oscuro, rompiendo la interfaz. Al limpiar la indentación, el motor de Markdown procesa el contenido correctamente como HTML puro.
+
+---
+
+## DT-012 - Implementación de "Limpiar Filtros" con callbacks
+
+**Decision:** añadir un botón de reseteo de filtros que utiliza `on_click` para limpiar las variables de `st.session_state` asociadas a los widgets de filtrado.
+
+**Razon:** intentar modificar el estado de un widget directamente en el cuerpo del script (después de su definición) provoca una `StreamlitAPIException`. El uso de un callback asegura que el cambio de estado ocurra antes del re-renderizado de los widgets en el siguiente ciclo.
+
+---
+
+## DT-013 - Refuerzo de contraste en selectores (Modo Claro)
+
+**Decision:** aplicar selectores CSS más agresivos (`[data-baseweb="list-item"]`) y colores sólidos para el resaltado de opciones en los menús desplegables.
+
+**Razon:** los estilos por defecto de Streamlit/BaseWeb en modo claro aplicaban un fondo oscuro con texto oscuro al seleccionar/hover, haciendo las opciones ilegibles. Se forzó un color de fondo gris claro sólido y se aseguró que todos los elementos hijos hereden el color de texto oscuro.

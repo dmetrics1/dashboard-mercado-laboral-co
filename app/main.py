@@ -274,12 +274,16 @@ def inject_styles(theme_name: str) -> None:
     select_muted = "#6B6355" if theme_name == "Light" else "#CBD5E1"
     select_border = "rgba(139,110,75,0.22)" if theme_name == "Light" else "rgba(255,255,255,0.16)"
     dropdown_bg = "#F5F0E6" if theme_name == "Light" else "#0F172A"
-    dropdown_hover = "rgba(30,45,85,0.08)" if theme_name == "Light" else "rgba(81,166,174,0.16)"
+    dropdown_hover = "#E2E8F0" if theme_name == "Light" else "rgba(81,166,174,0.16)"
     chrome_shadow = "0 6px 18px rgba(139,110,75,0.10)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.18)"
     chart_shadow = "0 10px 24px rgba(15,23,42,0.07)" if theme_name == "Light" else "0 12px 28px rgba(0,0,0,0.16)"
     sidebar_width = "15.5rem"
     sidebar_gap = "0.9rem"
     content_left = "16.85rem"
+
+    # Color para botón de limpiar
+    btn_clear_bg = "#F5F0E6" if theme_name == "Light" else "rgba(255,255,255,0.04)"
+    btn_clear_hover = "#E2E8F0" if theme_name == "Light" else "rgba(255,255,255,0.08)"
     st.markdown(
         f"""
         <style>
@@ -811,6 +815,31 @@ def inject_styles(theme_name: str) -> None:
             color: {select_muted} !important;
             fill: {select_muted} !important;
         }}
+
+        /* Estilo para botón de limpiar filtros */
+        div.stButton > button {{
+            background: {btn_clear_bg} !important;
+            border: 1px solid {select_border} !important;
+            border-radius: 8px !important;
+            color: {select_muted} !important;
+            font-weight: 700 !important;
+            font-size: 0.82rem !important;
+            height: 44px !important;
+            margin-top: 0 !important;
+            transition: all 0.2s ease !important;
+            width: 100% !important;
+        }}
+        div.stButton > button:hover {{
+            border-color: {t['accent']} !important;
+            color: {t['accent']} !important;
+            background: {btn_clear_hover} !important;
+            box-shadow: none !important;
+        }}
+        div.stButton > button:active, div.stButton > button:focus {{
+            box-shadow: none !important;
+            border-color: {t['accent']} !important;
+            background: {btn_clear_hover} !important;
+        }}
         [data-baseweb="popover"],
         [data-baseweb="menu"],
         ul[role="listbox"] {{
@@ -820,19 +849,27 @@ def inject_styles(theme_name: str) -> None:
             box-shadow: {chrome_shadow} !important;
         }}
         li[role="option"],
-        [role="option"] {{
+        [role="option"],
+        [data-baseweb="list-item"] {{
             background: {dropdown_bg} !important;
             color: {select_text} !important;
         }}
         li[role="option"]:hover,
-        [role="option"]:hover {{
+        li[role="option"][aria-selected="true"],
+        [role="option"]:hover,
+        [role="option"][aria-selected="true"],
+        [data-baseweb="list-item"]:hover,
+        [data-baseweb="list-item"][aria-selected="true"] {{
             background: {dropdown_hover} !important;
             color: {select_text} !important;
         }}
-        li[role="option"] div,
-        li[role="option"] span,
-        [role="option"] div,
-        [role="option"] span {{
+        /* Forzar color de texto en hijos para evitar herencia de colores oscuros */
+        li[role="option"]:hover *,
+        li[role="option"][aria-selected="true"] *,
+        [role="option"]:hover *,
+        [role="option"][aria-selected="true"] *,
+        [data-baseweb="list-item"]:hover *,
+        [data-baseweb="list-item"][aria-selected="true"] * {{
             color: {select_text} !important;
         }}
 
@@ -1149,25 +1186,38 @@ def render_side_nav() -> str:
 
 
 def render_controls(df_all):
+    def reset_filters_cb():
+        st.session_state.sel_ano = "Todos"
+        st.session_state.sel_level = "Sin filtro"
+        st.session_state.sel_geo = "Todas"
+
     st.markdown(
         "<div class='filters-title'>Filtros territoriales</div>",
         unsafe_allow_html=True
     )
-    year_col, level_col, geo_col = st.columns([0.85, 0.95, 1.2], gap="small")
+    year_col, level_col, geo_col, clear_col = st.columns([0.8, 0.9, 1.2, 0.6], gap="small")
     anos_disp = sorted(df_all["ano"].dropna().unique().tolist())
+    
     with year_col:
-        ano_ui = st.selectbox("Periodo anual", ["Todos"] + [str(a) for a in anos_disp], index=0)
+        ano_ui = st.selectbox("Periodo anual", ["Todos"] + [str(a) for a in anos_disp], index=0, key="sel_ano")
     anos_sel = anos_disp if ano_ui == "Todos" else [int(ano_ui)]
+    
     with level_col:
-        geo_level = st.selectbox("Nivel territorial", ["Sin filtro", "Departamento", "Ciudad"], index=0)
+        geo_level = st.selectbox("Nivel territorial", ["Sin filtro", "Departamento", "Ciudad"], index=0, key="sel_level")
+    
     with geo_col:
         if geo_level == "Departamento":
-            geo_sel = st.selectbox("Ubicación", ["Todos"] + opciones(df_all, "departamento", "DPTO_label"), index=0)
+            geo_sel = st.selectbox("Ubicación", ["Todos"] + opciones(df_all, "departamento", "DPTO_label"), index=0, key="sel_geo")
         elif geo_level == "Ciudad":
-            geo_sel = st.selectbox("Ubicación", ["Todas"] + opciones(df_all, "ciudad", "AREA_label"), index=0)
+            geo_sel = st.selectbox("Ubicación", ["Todas"] + opciones(df_all, "ciudad", "AREA_label"), index=0, key="sel_geo")
         else:
             geo_sel = "Todas"
-            st.selectbox("Ubicación", ["Sin filtro"], index=0, disabled=True)
+            st.selectbox("Ubicación", ["Sin filtro"], index=0, disabled=True, key="sel_geo_disabled")
+
+    with clear_col:
+        st.markdown("<div style='height:1.62rem'></div>", unsafe_allow_html=True)
+        st.button("Limpiar", on_click=reset_filters_cb)
+
     return ano_ui, anos_sel, geo_level, geo_sel
 
 
