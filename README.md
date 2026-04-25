@@ -22,11 +22,11 @@
 
 | Vista | Contenido |
 |---|---|
-| **Resumen** | KPIs nacionales, tendencia TD/TO/TGP, mapa de calor departamental |
+| **Resumen** | KPIs nacionales, tendencia TD/TO/TGP, mapa regional independiente de filtros |
 | **Población** | Pirámide poblacional (quinquenios), educación, estado civil, sexo, clase |
-| **Ocupados** | Rama de actividad, pirámide de ocupados, posición, ciudades, salarios |
-| **Desocupados** | Perfil de desocupados por edad/sexo, ciudades, educación |
-| **Brechas** | Brecha de género, brecha etaria (15-28 vs 29+), mapa departamental |
+| **Ocupados** | Rama de actividad, pirámide de ocupados, posición, ciudades, informalidad, salarios |
+| **Desocupados** | Perfil de desocupados por edad/sexo, ciudades, educación, tendencia FFT |
+| **Brechas** | Brecha de género, brecha etaria (15-28 vs 29+), mapa regional e indicadores |
 | **Instrucciones** | Guía de lectura para facultades y programas |
 | **Metodología** | Ficha técnica, definiciones, notas de cobertura |
 
@@ -34,12 +34,13 @@
 
 ## Funcionalidades clave
 
-- **Mapa de calor** interactivo de Colombia por departamento con selector TD / TO / TGP
+- **Mapa regional desacoplado:** El mapa de departamentos permite comparativas globales constantes, incluso al aplicar filtros de ciudad específica.
+- **Homogeneidad visual:** Sistema de alturas estándar para gráficos (`H_PAIRED`, `H_PYRAMID`, `H_SINGLE`) que garantiza simetría en el layout.
 - **Pirámide poblacional** en quinquenios (intervalos de 5 años: 15-19, 20-24 … 65+)
-- **Tasa de informalidad** calculada con regla DANE cuando están las variables completas
-- **Tema dual** oscuro / claro con toggle en la barra lateral
-- **Filtros globales** por año y nivel territorial (nacional / departamento / ciudad)
-- **Todos los indicadores ponderados** con `FEX_C18` (factor post-rediseño 2022+)
+- **Tasa de informalidad** calculada con regla DANE y visualización por rama de actividad.
+- **Población FFT:** Métrica y tendencia de personas Fuera de la Fuerza de Trabajo (inactivos).
+- **Tema dual** oscuro / claro con inyección de CSS personalizada y tipografía premium (`Fraunces` & `Manrope`).
+- **Filtros globales** por año y nivel territorial con resumen de chips activos.
 
 ---
 
@@ -49,7 +50,7 @@
 - **Cobertura:** 2022 a 2025 · bases anuales consolidadas
 - **Unidad de análisis:** persona
 - **Factor de expansión:** `FEX_C18`
-- **Indicadores:** TD, TO, TGP, informalidad, ingreso laboral mediano ponderado
+- **Indicadores:** TD, TO, TGP, informalidad, ingreso laboral mediano ponderado, FFT
 
 ---
 
@@ -58,10 +59,10 @@
 | Capa | Tecnología |
 |---|---|
 | Dashboard | Streamlit |
-| Gráficos | Plotly (Scatter/Choropleth Mapbox, go.Figure) |
+| Gráficos | Plotly (Scatter/Choropleth Mapbox, subplots) |
 | ETL | Polars + pandas + pyarrow |
 | Persistencia | Parquet (`indicadores_mensuales.parquet`) |
-| Tests | pytest |
+| Estilos | CSS dinámico (Dark/Light mode) |
 | Deploy | Streamlit Community Cloud |
 
 ---
@@ -95,10 +96,9 @@ O ajusta `BASES_DIR` en `src/config.py`.
 ### 3. Correr el pipeline ETL
 
 ```bash
-cd portafolio/dashboard_mercado_laboral_co
 python src/etl.py
 ```
-Genera `data/processed/indicadores_mensuales.parquet` (6.160 filas, 25 columnas en la corrida actual).
+Genera `data/processed/indicadores_mensuales.parquet`.
 
 ### 4. Lanzar el dashboard
 
@@ -113,7 +113,7 @@ streamlit run app/main.py
 ```
 dashboard_mercado_laboral_co/
 ├── app/
-│   └── main.py              # Dashboard Streamlit (~2 000 líneas)
+│   └── main.py              # Dashboard Streamlit (~2 500 líneas)
 ├── src/
 │   ├── config.py            # Rutas, grupos de edad, mapeos DIVIPOLA
 │   ├── etl.py               # Pipeline principal
@@ -122,9 +122,8 @@ dashboard_mercado_laboral_co/
 │   ├── dictionary.py        # Procesamiento diccionario GEIH
 │   └── validate.py          # Validación vs. cifras oficiales DANE
 ├── data/
-│   ├── raw/                 # Bases anuales (no versionadas)
-│   ├── reference/           # Diccionario.xlsx
-│   └── processed/           # Parquet de salida
+│   ├── reference/           # GeoJSON departamental
+│   └── processed/           # Parquet de salida y productos del diccionario
 ├── docs/
 │   ├── especificaciones.md  # Matriz de variables por vista
 │   └── decisiones_tecnicas.md

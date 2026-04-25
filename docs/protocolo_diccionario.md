@@ -2,7 +2,8 @@
 
 ## Archivo fuente
 
-`data/reference/diccionario.xlsx` - hoja `Hoja1`
+`../bases_datos/geih/diccionario.xlsx` - hoja `Hoja1`. Si esa ruta externa no
+existe, `src/config.py` permite usar como respaldo `data/reference/diccionario.xlsx`.
 
 Columnas: `nombre_variable`, `etiqueta_variable`, `descripcion`, `pregunta_literal`, `tipo_variable`, `codigo_categoria`, `categoria`
 
@@ -48,4 +49,6 @@ Variables con metadata en el diccionario pero sin codigos explicitos se resuelve
 
 Casos documentados:
 - `P3271` (sexo al nacer). Ver DT-002.
+- `CLASE` (urbano/rural).
+- `P3042` (nivel educativo homologado).
 - `RAMA2D_R4` (division CIIU Rev. 4): se agrupa en sectores amplios siguiendo `portafolio/bases_datos/geih/protocolo_diccionario_geih.md`.

@@ -117,7 +117,7 @@ Texto completo en `portafolio\bases_datos\geih\instructivo_trabajo_geih.md`. Pun
 ```
 dashboard-mercado-laboral-co/
 │
-├── SPEC.md                              ← Doc técnico maestro del proyecto
+├── spec.MD                              ← Doc técnico maestro del proyecto
 ├── README.md                            ← Orientado a reclutadores/clientes
 ├── LICENSE                              ← MIT
 │
@@ -126,14 +126,9 @@ dashboard-mercado-laboral-co/
 │   └── decisiones_tecnicas.md           ← Log de decisiones (DT-001, DT-002, ...)
 │
 ├── data/
-│   ├── raw/                             ← 4 bases anuales (no versionadas en git)
-│   │   ├── geih_2022.csv
-│   │   ├── geih_2023.csv
-│   │   ├── geih_2024.csv
-│   │   └── geih_2025.csv
 │   ├── reference/
-│   │   └── diccionario.xlsx
-│   └── processed/                       ← Salidas del pipeline
+│   │   └── colombia_departamentos.geojson
+│   └── processed/                       ← Salidas del pipeline y diccionario procesado
 │
 ├── src/
 │   ├── config.py                        ← Rutas, variables clave, mapeos complementarios
@@ -148,9 +143,7 @@ dashboard-mercado-laboral-co/
 │
 ├── notebooks/
 │   ├── 00_explorar_diccionario.ipynb
-│   ├── 01_explorar_base_anual.ipynb
-│   ├── 02_aplicar_diccionario.ipynb
-│   └── 03_validar_indicadores.ipynb
+│   └── 01_explorar_base_anual.ipynb
 │
 ├── tests/
 │   ├── test_dictionary.py
@@ -191,10 +184,13 @@ Ingreso mediano = mediana ponderada de P6500 entre ocupados
 
 Dimensiones de corte:
 - Total nacional
+- Por `DPTO_label` (departamento)
 - Por `AREA_label` (ciudad)
 - Por `P3271_label` (sexo)
-- Por grupos de edad: 15-24, 25-34, 35-44, 45-54, 55-64, 65+
+- Por grupos de edad quinquenales: 15-19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-49, 50-54, 55-59, 60-64, 65+
+- Por brecha etaria: 15-28 vs 29+
 - Por `RAMA2D_R4_label` (sector económico)
+- Por `CLASE_label`, `P6070_label`, `P3042_label` y `P6430_label`
 
 ---
 
@@ -224,7 +220,7 @@ Dimensiones de corte:
 - [ ] Cobertura >= 95% en variables codificadas usadas por el dashboard.
 - [ ] TD calculada difiere < 0.2 puntos porcentuales de la cifra oficial DANE mensual.
 - [ ] Dashboard carga en < 3 segundos.
-- [ ] Las 5 vistas responden a filtros (periodo, ciudad, sexo, edad, sector).
+- [ ] Las 5 vistas analíticas responden a filtros globales; Instrucciones y Metodología son vistas de lectura.
 - [ ] README con caso de negocio y reproducibilidad.
 - [ ] Repo público con licencia MIT y `.gitignore` correcto.
 - [ ] Dashboard desplegado en Streamlit Community Cloud con URL pública.
@@ -260,7 +256,7 @@ NO incluir en esta versión:
 **Última revisión documental:** 2026-04-22.
 
 ### Ya construido
-- `SPEC.md`
+- `spec.MD`
 - `README.md` (orientado a reclutadores)
 - `LICENSE` (MIT)
 - `.gitignore`
@@ -269,7 +265,8 @@ NO incluir en esta versión:
 - `docs/decisiones_tecnicas.md` (DT-001 a DT-009)
 - `src/config.py` (con mapeos complementarios)
 - `src/dictionary.py` (implementación completa del protocolo)
-- `data/reference/diccionario.xlsx` (en el repo)
+- `data/reference/colombia_departamentos.geojson`
+- Diccionario GEIH resuelto por `src/config.py`: ruta externa `portafolio/bases_datos/geih/diccionario.xlsx` con fallback a `data/reference/diccionario.xlsx`
 - `notebooks/00_explorar_diccionario.ipynb`
 - ✅ `src/loaders.py` — carga .parquet / .csv / .sav con tipado estricto
 - ✅ `src/indicators.py` — TD, TO, TGP, informalidad e ingreso mediano ponderados con FEX_C18
@@ -279,6 +276,7 @@ NO incluir en esta versión:
 - ✅ `app/main.py` — Streamlit rediseñado: 7 vistas, nav lateral custom con íconos SVG, KPIs con delta, gráficos Plotly pulidos, mapa coroplético, bloques interpretativos, toggle oscuro/claro via query param, sidebar sticky
 - ✅ `tests/test_dictionary.py` y `tests/test_indicators.py` — pytest
 - ✅ `docs/especificaciones.md` — matriz actualizada contra el código y el parquet vigente
+- ✅ `data/processed/indicadores_mensuales.parquet` — 6.160 filas, 25 columnas y 12 dimensiones
 
 ### Decisiones de diseño UI (2026-04-14)
 - Nav lateral: links HTML puros con `?view=<key>` en query param. Sin `st.radio`.

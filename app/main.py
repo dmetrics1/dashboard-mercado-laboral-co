@@ -173,6 +173,12 @@ ACTIVE_THEME = THEMES["Dark"]
 
 AGE_ORDER = ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65+"]
 
+# Alturas estándar para mantener proporciones homogéneas por fila
+H_PAIRED   = 480   # gráficos en columnas de 2 (mismo valor para ambos)
+H_PYRAMID  = 480   # pirámide siempre igual a su par
+H_SINGLE   = 380   # gráficos que van solos a ancho completo
+H_SMALL    = 320   # gráficos pequeños (3 columnas, guía, metodología)
+
 BLUE_TEAL_30 = [
     "#EDF7F7", "#E5F3F3", "#DDEEEF", "#D5EAEB", "#CCE5E6",
     "#C3E0E2", "#B9DBDD", "#AED6D8", "#A2D0D2", "#96CACC",
@@ -551,7 +557,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .card {{
             border-radius: 10px;
-            padding: 0.95rem 1rem 0.9rem;
+            padding: 0.75rem 0.85rem 0.7rem;
             min-height: 116px;
             position: relative;
             overflow: hidden;
@@ -566,7 +572,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .mini-card {{
             border-radius: 10px;
-            padding: 0.9rem 1rem;
+            padding: 0.7rem 0.85rem;
         }}
         /* Tarjeta-contenedor para cada st.plotly_chart (visualmente la del spec) */
         [data-testid="stPlotlyChart"] {{
@@ -575,6 +581,7 @@ def inject_styles(theme_name: str) -> None:
             border-radius: 10px !important;
             padding: 0.55rem 0.55rem 0.4rem !important;
             box-shadow: {chart_shadow} !important;
+            height: 100%;
         }}
         .map-control-card {{
             background: {t['panel_bg']};
@@ -699,13 +706,13 @@ def inject_styles(theme_name: str) -> None:
         .kpi-delta.down {{ background: rgba(244,63,94,0.14); color: {t['negative']}; }}
         .kpi-delta.neutral {{ background: {t['input_bg']}; color: {t['muted']}; }}
 
-        .section-gap {{ height: 0.85rem; }}
-        .section-gap-lg {{ height: 1.45rem; }}
+        .section-gap {{ height: 0.35rem; }}
+        .section-gap-lg {{ height: 0.7rem; }}
         .section-header {{
-            margin: 0.65rem 0 0.55rem;
+            margin: 0.3rem 0 0.35rem;
             padding-top: 0.05rem;
             border-top: 1px solid {t['line']};
-            padding-top: 0.85rem;
+            padding-top: 0.5rem;
         }}
         .section-header:first-of-type {{
             border-top: none;
@@ -878,7 +885,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
             xanchor="left",
             pad=dict(l=4),
         ),
-        margin=dict(l=20, r=22, t=90 if full_title else 24, b=48),
+        margin=dict(l=16, r=18, t=72 if full_title else 18, b=36),
         hoverlabel=dict(
             bgcolor=t["panel_solid"],
             bordercolor=t["line"],
@@ -928,7 +935,7 @@ def fig_base_h(fig, title: str = "", subtitle: str = ""):
     """Base para gráficos horizontales (intercambia grid de ejes)."""
     fig = fig_base(fig, title, subtitle)
     fig.update_layout(
-        margin=dict(l=28, r=34, t=90 if (title or subtitle) else 24, b=52),
+        margin=dict(l=28, r=28, t=72 if (title or subtitle) else 18, b=38),
         xaxis=dict(
             gridcolor=ACTIVE_THEME["chart_grid"],
             gridwidth=1,
@@ -1366,7 +1373,7 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
     fig.update_layout(
         barmode="relative",
         bargap=0.22,
-        height=max(440, len(AGE_ORDER) * 32 + 170),
+        height=H_PYRAMID,
         margin=dict(l=24, r=28, t=112, b=48),
         legend=dict(
             orientation="h",
@@ -1404,7 +1411,7 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
 # ---------------------------------------------------------------------------
 # Vista 1: Resumen ejecutivo
 # ---------------------------------------------------------------------------
-def view_resumen(df_context, df_dep, context_label):
+def view_resumen(df_context, df_dep, df_dep_mapa, context_label):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1474,59 +1481,17 @@ def view_resumen(df_context, df_dep, context_label):
         title_font=dict(color=t["muted"], size=11),
     )
     fig.update_xaxes(tickformat="%b %Y", dtick="M3")
-    fig.update_layout(height=380)
+    fig.update_layout(height=H_SINGLE)
     fig = add_eventos_geih(fig, t)
     st.plotly_chart(fig, use_container_width=True)
 
     # Comparativo departamental: prioridad de política pública = mayor desempleo
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-    render_section("Prioridades territoriales", "Departamentos con mayor presión laboral · último período")
-    if df_dep.empty or "DPTO_label" not in df_dep.columns:
-        placeholder(
-            "El comparativo departamental aparecerá al regenerar el parquet<br>"
-            "con la dimensión <code>departamento</code> en <code>src/etl.py</code>.",
-            "🗺️",
-        )
-    else:
-        dep = (
-            df_dep.sort_values("periodo")
-            .groupby("DPTO_label", as_index=False)[["TD", "TO"]]
-            .last()
-        )
-        left, right = st.columns(2, gap="large")
-        with left:
-            d = dep.sort_values("TD", ascending=False).head(12).sort_values("TD")
-            d["txt"] = d["TD"].map(lambda x: f"{x:.1f}%")
-            fig = px.bar(
-                d, x="TD", y="DPTO_label", orientation="h",
-                text="txt", color="TD",
-                color_continuous_scale=BLUE_TEAL_SCALE,
-            )
-            fig = fig_base_h(fig, "Mayor desempleo (TD)", "Top 12 departamentos · ascendente")
-            fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-            fig.update_coloraxes(showscale=False)
-            fig.update_xaxes(ticksuffix="%")
-            fig.update_layout(height=max(420, len(d) * 32 + 150))
-            st.plotly_chart(fig, use_container_width=True)
-        with right:
-            d2 = dep.sort_values("TO").head(12).sort_values("TO", ascending=False)
-            d2["txt"] = d2["TO"].map(lambda x: f"{x:.1f}%")
-            fig = px.bar(
-                d2, x="TO", y="DPTO_label", orientation="h",
-                text="txt", color="TO",
-                color_continuous_scale=BLUE_TEAL_SCALE,
-            )
-            fig = fig_base_h(fig, "Menor ocupación (TO)", "12 departamentos con menor TO · descendente")
-            fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-            fig.update_coloraxes(showscale=False)
-            fig.update_xaxes(ticksuffix="%")
-            fig.update_layout(height=max(420, len(d2) * 32 + 150))
-            st.plotly_chart(fig, use_container_width=True)
 
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         render_section("Mapa regional", "Cambia el indicador para ver la geografía del mercado")
-        render_map_module(df_dep, "TD", "resumen", "")
+        render_map_module(df_dep_mapa, "TD", "resumen", "")
 
     render_interpretation(
         "La tendencia muestra una <b>TD</b> que oscila alrededor del 10% nacional, "
@@ -1573,31 +1538,14 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             )
             fig = fig_base_h(fig, "Población por nivel educativo", "Promedio del periodo · P3042")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-            fig.update_layout(height=max(360, len(edu) * 34 + 140))
+            fig.update_layout(height=H_PYRAMID)
             st.plotly_chart(fig, use_container_width=True)
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Composición por estado civil, sexo y clase", "Distribuciones relativas · promedio del periodo")
-    a, b, c = st.columns(3, gap="small")
-
-    with a:
-        if df_civil.empty or "P6070_label" not in df_civil.columns:
-            placeholder("Estado civil sin datos.<br>Agregar <code>P6070</code> al ETL.", "💍")
-        else:
-            civil = df_civil.groupby("P6070_label", as_index=False)["poblacion_total_exp"].mean()
-            civil["txt"] = civil["poblacion_total_exp"].map(fmt_metric)
-            fig = px.bar(
-                civil.sort_values("poblacion_total_exp"),
-                x="poblacion_total_exp", y="P6070_label", orientation="h",
-                text="txt",
-                color_discrete_sequence=[BT_TEAL],
-            )
-            fig = fig_base_h(fig, "Estado civil", "P6070 · promedio del periodo")
-            fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-            fig.update_layout(height=max(340, len(civil) * 38 + 140))
-            st.plotly_chart(fig, use_container_width=True)
-
-    with b:
+    # Tortas: sexo y clase en la misma fila
+    b_col, c_col = st.columns(2, gap="large")
+    with b_col:
         if df_sexo.empty or "P3271_label" not in df_sexo.columns:
             placeholder("Datos de sexo no disponibles.", "⚧")
         else:
@@ -1619,7 +1567,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             fig.update_layout(showlegend=False)
             st.plotly_chart(fig, use_container_width=True)
 
-    with c:
+    with c_col:
         if df_clase.empty or "CLASE_label" not in df_clase.columns:
             placeholder("Clase urbano/rural sin datos.<br>Agregar <code>CLASE</code> al ETL.", "🏙️")
         else:
@@ -1639,6 +1587,25 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             )
             fig.update_layout(showlegend=False)
             st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+
+    # Barras: estado civil sola abajo para mayor legibilidad
+    if df_civil.empty or "P6070_label" not in df_civil.columns:
+        placeholder("Estado civil sin datos.<br>Agregar <code>P6070</code> al ETL.", "💍")
+    else:
+        civil = df_civil.groupby("P6070_label", as_index=False)["poblacion_total_exp"].mean()
+        civil["txt"] = civil["poblacion_total_exp"].map(fmt_metric)
+        fig = px.bar(
+            civil.sort_values("poblacion_total_exp"),
+            x="poblacion_total_exp", y="P6070_label", orientation="h",
+            text="txt",
+            color_discrete_sequence=[BT_TEAL],
+        )
+        fig = fig_base_h(fig, "Estado civil", "P6070 · promedio del periodo")
+        fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
+        fig.update_layout(height=max(340, len(civil) * 38 + 140))
+        st.plotly_chart(fig, use_container_width=True)
 
 
 # ---------------------------------------------------------------------------
@@ -1702,7 +1669,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
                 textposition="outside", cliponaxis=False, marker_line_width=0,
                 hovertemplate="<b>%{y}</b><br>%{x:,.0f} ocupados<extra></extra>",
             )
-            fig.update_layout(height=max(420, len(sec) * 30 + 150))
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
     with right:
         plot_pyramid(df_sx_age, "ocupados_exp", "Pirámide de ocupados", "Por sexo y grupo de edad · P3271 × P6040")
@@ -1738,7 +1705,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
         fig = fig_base_h(fig, "Tasa de informalidad por rama", "Top 10 · menor a mayor · DANE 2022")
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
         fig.update_xaxes(ticksuffix="%")
-        fig.update_layout(height=max(380, len(inf_sec) * 34 + 140))
+        fig.update_layout(height=H_SINGLE)
         st.plotly_chart(fig, use_container_width=True)
         
         render_interpretation(
@@ -1777,7 +1744,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             )
             fig.update_layout(
                 margin=dict(l=200, r=34, t=74, b=52),
-                height=max(380, len(pos) * 38 + 140),
+                height=H_PAIRED,
             )
             fig.update_yaxes(tickfont=dict(size=11))
             st.plotly_chart(fig, use_container_width=True)
@@ -1801,7 +1768,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             fig = fig_base_h(fig, "Ocupados por ciudad", "Top 12 áreas metropolitanas · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_coloraxes(showscale=False)
-            fig.update_layout(height=max(380, len(city) * 32 + 140))
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
 
     if not df_edu.empty and "P3042_label" in df_edu.columns:
@@ -1816,7 +1783,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
                          color_discrete_sequence=[BT_BLUE])
             fig = fig_base_h(fig, "Ocupados por nivel educativo", "P3042 · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-            fig.update_layout(height=max(360, len(d) * 34 + 140))
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
         with right:
             d2 = edu.sort_values("ingreso_mediano")
@@ -1826,7 +1793,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
             fig = fig_base_h(fig, "Ingreso mediano por nivel educativo", "COP corrientes · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_xaxes(tickprefix="$", separatethousands=True)
-            fig.update_layout(height=max(360, len(d2) * 34 + 140))
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
@@ -1866,15 +1833,12 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
             "Desocupados / PEA × 100",
             fmt_delta_html(row.get("TD"), prev.get("TD") if prev is not None else None, mode="pct", invert=True),
         )
-        with cols[2]:
-            st.markdown(
-                "<div class='card'>"
-                "<div class='kpi-label'>Tiempo prom. de búsqueda</div>"
-                "<div class='kpi-value' style='font-size:1.5rem;opacity:0.5'>Pronto</div>"
-                "<div class='kpi-foot'><code>P6240</code> pendiente de agregar al parquet.</div>"
-                "</div>",
-                unsafe_allow_html=True,
-            )
+        render_kpi(
+            cols[2], "Fuera de fuerza de trabajo (FFT)",
+            fmt_metric(row.get("FFT_exp", 0)),
+            "No busca ni trabaja · FFT_exp",
+            fmt_delta_html(row.get("FFT_exp"), prev.get("FFT_exp") if prev is not None else None, invert=True),
+        )
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Perfil de desocupados", "Estructura por sexo, edad y distribución geográfica")
@@ -1901,7 +1865,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
             fig = fig_base_h(fig, "Desocupados por ciudad", "Top 12 áreas metropolitanas · menor a mayor")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_coloraxes(showscale=False)
-            fig.update_layout(height=max(380, len(city) * 32 + 140))
+            fig.update_layout(height=H_PYRAMID)
             st.plotly_chart(fig, use_container_width=True)
 
     if geo_level != "Sin filtro":
@@ -1923,11 +1887,30 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
         )
         fig = fig_base_h(fig, "Desocupados por nivel educativo", "P3042 · menor a mayor")
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
-        fig.update_layout(height=max(360, len(edu) * 34 + 140))
+        fig.update_layout(height=H_SINGLE)
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         placeholder("Educación de desocupados sin datos. Agregar <code>P3042</code> al ETL.", "📚")
+
+    if "FFT_exp" in df_context.columns and not df_context.empty:
+        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+        render_section("Fuera de fuerza de trabajo (FFT)", "Evolución mensual · personas fuera del mercado laboral")
+        fft_trend = df_context.sort_values("periodo")[["periodo", "FFT_exp"]].dropna(subset=["FFT_exp"])
+        if not fft_trend.empty:
+            fig = go.Figure()
+            fig.add_trace(go.Bar(
+                x=fft_trend["periodo"],
+                y=fft_trend["FFT_exp"],
+                marker_color=BT_PALE,
+                marker_line_width=0,
+                hovertemplate="<b>%{x|%b %Y}</b><br>FFT: %{y:,.0f}<extra></extra>",
+            ))
+            fig = fig_base(fig, "Población fuera de la fuerza de trabajo", f"Contexto: {context_label}")
+            fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+            fig.update_yaxes(title_text="Personas")
+            fig.update_layout(height=H_SMALL)
+            st.plotly_chart(fig, use_container_width=True)
 
     render_interpretation(
         "El desempleo está concentrado: pocas áreas metropolitanas suelen agrupar buena parte de los "
@@ -1942,7 +1925,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
 # ---------------------------------------------------------------------------
 # Vista 5: Brechas y comparaciones
 # ---------------------------------------------------------------------------
-def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
+def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level):
     t = ACTIVE_THEME
     if geo_level != "Sin filtro":
         st.markdown(
@@ -1972,6 +1955,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
             )
             fig.update_xaxes(tickformat="%b %Y", dtick="M3")
             fig.update_yaxes(ticksuffix="%")
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
 
     with right:
@@ -1991,6 +1975,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
             fig.update_xaxes(title_text="")
             fig.update_yaxes(ticksuffix="%")
             fig.update_layout(showlegend=False)
+            fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
     
     render_interpretation(
@@ -2036,13 +2021,13 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level):
         fig.update_coloraxes(showscale=False)
         fig.update_xaxes(ticksuffix=" pp")
         fig.add_vline(x=0, line_width=1.5, line_dash="dot", line_color=ACTIVE_THEME["muted"])
-        fig.update_layout(height=max(520, len(dep) * 24 + 160))
+        fig.update_layout(height=max(H_SINGLE, len(dep) * 22 + 120))
         st.plotly_chart(fig, use_container_width=True)
 
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap-lg'></div>", unsafe_allow_html=True)
         render_section("Mapa de distribución regional", "Selecciona el indicador que quieres comparar por departamento")
-        render_map_module(df_dep, "TD", "brechas", "")
+        render_map_module(df_dep_mapa, "TD", "brechas", "")
 
     render_interpretation(
         "El comparativo regional separa departamentos por encima y por debajo del promedio nacional. "
@@ -2305,7 +2290,7 @@ def view_metodologia(df):
     fig.update_coloraxes(showscale=False)
     fig.update_xaxes(title_text="Registros")
     fig.update_yaxes(title_text="")
-    fig.update_layout(height=max(360, len(coverage) * 28 + 130), margin=dict(l=146, r=34, t=90, b=48))
+    fig.update_layout(height=H_SINGLE, margin=dict(l=146, r=34, t=90, b=48))
     st.plotly_chart(fig, use_container_width=True)
 
     # Bloque 3: definiciones operativas
@@ -2465,6 +2450,7 @@ else:
 # Filtrar dimensiones
 df_nac         = filtrar(df_all, "nacional",            anos_sel, geo_level, geo_sel)
 df_dep         = filtrar(df_all, "departamento",        anos_sel, geo_level, geo_sel)
+df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, "Sin filtro", "Todas")
 df_city        = filtrar(df_all, "ciudad",              anos_sel, geo_level, geo_sel)
 df_sexo        = filtrar(df_all, "sexo",                anos_sel, geo_level, geo_sel)
 df_sx_age      = filtrar(df_all, "sexo_edad",           anos_sel, geo_level, geo_sel)
@@ -2492,7 +2478,7 @@ with body_slot:
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
-        view_resumen(df_context, df_dep, context_label)
+        view_resumen(df_context, df_dep, df_dep_mapa, context_label)
     elif vista == "poblacion":
         view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel)
     elif vista == "ocupados":
@@ -2500,7 +2486,7 @@ with body_slot:
     elif vista == "desocupados":
         view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_level)
     elif vista == "brechas":
-        view_brechas(df_sexo, df_edad_brecha, df_dep, df_nac, geo_level)
+        view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level)
     elif vista == "instrucciones":
         view_instrucciones(df_nac, df_dep)
     else:
