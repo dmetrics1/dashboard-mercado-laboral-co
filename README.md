@@ -34,11 +34,9 @@
 
 ## Funcionalidades clave
 
-- **Mapa regional desacoplado:** El mapa de departamentos permite comparativas globales constantes, incluso al aplicar filtros de ciudad específica.
-- **Homogeneidad visual:** Sistema de alturas estándar para gráficos (`H_PAIRED`, `H_PYRAMID`, `H_SINGLE`) que garantiza simetría en el layout.
-- **Pirámide poblacional** en quinquenios (intervalos de 5 años: 15-19, 20-24 … 65+)
-- **Tasa de informalidad** calculada con regla DANE y visualización por rama de actividad.
-- **Población FFT:** Métrica y tendencia de personas Fuera de la Fuerza de Trabajo (inactivos).
+- **Optimización Visual:** Homogeneización de alturas de gráficos, reducción de espacios entre secciones y alineación vertical milimétrica entre el panel de navegación y el contenido principal.
+- **Desacoplamiento Territorial:** El mapa regional ahora se mantiene independiente de los filtros locales para proporcionar un contexto nacional constante.
+- **Métricas Avanzadas:** Inclusión del KPI y tendencia de "Fuera de la Fuerza de Trabajo" (FFT).
 - **Tema dual** oscuro / claro con inyección de CSS personalizada y tipografía premium (`Fraunces` & `Manrope`).
 - **Filtros globales** por año y nivel territorial con resumen de chips activos.
 

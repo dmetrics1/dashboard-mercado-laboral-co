@@ -323,6 +323,7 @@ def inject_styles(theme_name: str) -> None:
             border-radius: 12px !important;
             padding: 0.85rem 1rem !important;
             box-shadow: {"0 2px 8px rgba(139,110,75,0.08)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.04)"} !important;
+            margin-top: -0.85rem !important;
             margin-bottom: 0.68rem !important;
         }}
         .st-key-hero_filters_card > div,
@@ -344,7 +345,7 @@ def inject_styles(theme_name: str) -> None:
             margin-right: 0 !important;
             padding-left: 0.9rem !important;
             padding-right: 1.65rem !important;
-            padding-top: 1rem !important;
+            padding-top: 0 !important;
             padding-bottom: 0.9rem !important;
             box-sizing: border-box !important;
         }}
