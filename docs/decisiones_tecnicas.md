@@ -1,6 +1,6 @@
 # Log de decisiones tecnicas
 
-Ultima revision: 2026-04-26.
+Ultima revision: 2026-04-26 (segunda actualizacion).
 
 ---
 
@@ -144,3 +144,35 @@ Ultima revision: 2026-04-26.
 **Impacto en parquet:** 6.160 filas -> 106.061 filas. Tamanio en disco sigue siendo manejable para uso local de Streamlit.
 
 **Vistas beneficiadas:** Poblacion (piramide, educacion, estado civil, clase, sexo), Ocupados (piramide de ocupados, educacion e ingresos) y Desocupados (piramide de desocupados, educacion). Todos usan `df_sx_age`, `df_edu`, `df_civil`, `df_sexo` o `df_clase` que ahora pasan por `_dem()`.
+
+---
+
+## DT-015 - Correcciones de KPIs en vista Poblacion y mejoras de mapas
+
+**Decision:** conjunto de correcciones de datos y UI aplicadas a la vista Poblacion y a los mapas de Resumen, Ocupados y Desocupados.
+
+**Correcciones de datos:**
+
+- **KPI Poblacion total:** usaba `df_sx_age` (dimension `sexo_edad`) que excluye menores de 15 porque `asignar_grupo_edad` les asigna `grupo_edad=null`. Resultado incorrecto: 40.9 M en lugar de 52.3 M. Corregido usando `df_sexo` (suma Hombre + Mujer incluye todos los rangos de edad).
+- **KPI Poblacion urbana:** el label real en el parquet es `"Urbano"` (no `"Urbana"`). El filtro `== "Urbana"` retornaba 0 filas y mostraba 0.0%.
+- **Delta en Mujeres y Urbana:** los KPIs solo mostraban el valor del ultimo periodo. Se agrego calculo del penultimo periodo para mostrar `delta vs periodo anterior` consistente con el resto de vistas.
+
+**Correcciones de UI:**
+
+- **Altura de KPI cards:** `min-height: 116px` cambiado a `height: 148px` fijo para que todas las cards de todas las vistas tengan la misma dimension, independientemente del contenido.
+- **`.kpi-value-sm`:** nueva clase CSS (1.45rem / weight 600) para valores de texto largo (p.ej. "Basica primaria"). Evita que el texto se corte o desborde la card.
+- **Nivel educativo:** valor truncado antes del parentesis (`"Basica primaria (1o - 5o)"` -> `"Basica primaria"`) para caber en la card estandar.
+
+**Correcciones de mapa de ciudades (`plot_mapa_ciudades`):**
+
+- Matching fragil reemplazado por lookup via `_geo_key()` + strip de sufijos `" AM"` y `" DC"`. Clave `"Bogota D.C."` corregida a `"Bogota"` en `CITY_COORDS`.
+- `mode="markers+text"` cambiado a `mode="markers"`: las etiquetas de texto superponian 23 ciudades; el hover muestra el dato completo.
+- Panel de control del mapa de ciudades equiparado al departamental: container con titulo, subtitulo y extremos Mayor/Menor.
+- Mapa de ciudades movido fuera del bloque `if not df_dep.empty` para que sea independiente del mapa departamental.
+
+**Renombrados en vista Desocupados:**
+
+- KPI `"Fuera de fuerza de trabajo (FFT)"` -> `"Inactivos"`.
+- Seccion `"Fuera de fuerza de trabajo (FFT)"` -> `"Poblacion inactiva"`.
+- Titulo del grafico de barras -> `"Poblacion inactiva (FFT)"`.
+- Warnings obsoletos de geo eliminados en Ocupados y Desocupados (ya cubiertos por DT-014).

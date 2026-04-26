@@ -1,6 +1,6 @@
 # Especificaciones de Diseño: Dashboard de Mercado Laboral (GEIH)
 
-Última revisión: 2026-04-26.
+Última revisión: 2026-04-26 (segunda actualización).
 
 Este documento refleja el estado actual del código y del parquet procesado
 `data/processed/indicadores_mensuales.parquet`: 106.061 filas, 25 columnas y 22
@@ -20,15 +20,15 @@ frecuencia mensual.
 
 | vista | estado | contenido actual |
 |---|---|---|
-| Resumen | listo | KPIs de población, PEA, ocupados, desocupados, TD, TO, TGP, ingreso mediano, tendencia y mapa departamental. |
-| Población | listo | Pirámide por sexo y edad, nivel educativo, estado civil, sexo y clase urbano/rural. |
-| Ocupados | listo | KPIs laborales, rama de actividad, informalidad, posición ocupacional, ciudad, educación e ingresos. |
-| Desocupados | parcial | KPIs, pirámide, ciudad y educación. Tiempo de búsqueda sigue pendiente. |
+| Resumen | listo | KPIs de población, PEA, ocupados, desocupados, TD, TO, TGP, ingreso mediano, tendencia, mapa departamental y mapa de ciudades (23 áreas metropolitanas). |
+| Población | listo | 4 KPIs (población total, % mujeres, % urbana, nivel educativo) con delta; pirámide, nivel educativo, estado civil, sexo y clase urbano/rural. Responde a filtros territoriales. |
+| Ocupados | listo | KPIs laborales, rama de actividad, informalidad, posición ocupacional, ciudad, educación e ingresos. Mapa departamental filtrable por TO e Informalidad. |
+| Desocupados | parcial | KPIs (incluye Inactivos), pirámide, ciudad y educación. Gráfico FFT como barras. Mapa departamental filtrable por TD e Inactividad. Tiempo de búsqueda pendiente. |
 | Brechas | listo | Brecha de género, brecha etaria 15-28 vs 29+, comparativo regional y mapa. |
 | Instrucciones | listo | Guía de lectura para facultades y programas. No usa filtros. |
 | Metodología | listo | Ficha técnica, glosario y trazabilidad de variables. No usa filtros. |
 
-### Criterios visuales vigentes (2026-04-25)
+### Criterios visuales vigentes (2026-04-26)
 
 **Tipografía dual:**
 - Display: `Fraunces` (serif editorial, opsz 9–144) para KPIs, títulos de vista y mini-values.
@@ -59,7 +59,9 @@ frecuencia mensual.
 
 **KPI cards:**
 - Stripe horizontal de 3 px en degradado BT_NAVY → BT_TEAL al tope de cada `.card`.
-- KPI value en Fraunces 700, 2.15rem; mini-value en Fraunces 700, 1.55rem.
+- Altura fija `height: 148px` uniforme en todas las vistas; `overflow: hidden` evita desbordamiento.
+- KPI value en Fraunces 700, 2.15rem. Valores de texto largo usan `.kpi-value-sm` (1.45rem/600).
+- Todas las cards muestran delta `↑/↓ vs periodo ant.` cuando el valor es numérico.
 
 **Section headers:**
 - Usan `border-top` separador + `padding-top` generoso (0.85rem) entre secciones.
@@ -72,15 +74,20 @@ frecuencia mensual.
 
 **Reglas de no-redundancia:**
 - `view_resumen`: tendencia a ancho completo; mini-cards laterales eliminadas (duplicaban KPIs).
-- Comparativo departamental: muestra los de **mayor** TD/menor TO (relevante para política),
-  no los de menor TD.
+- Comparativo departamental: muestra los de **mayor** TD/menor TO (relevante para política).
 - `view_instrucciones`: sin gráfico "Pulso nacional" (repetía KPIs del Resumen).
 - Todas las `render_interpretation()` reescritas para corresponder exactamente a los gráficos
   visibles en cada vista.
 
-**Mapa departamental:**
-- Coroplético con escala BLUE_TEAL_30, `carto-positron` en claro / `carto-darkmatter` en oscuro.
-- Panel de control lateral con extremos Mayor/Menor calculados en tiempo real.
+**Mapas:**
+- **Departamental** (Resumen, Ocupados, Desocupados, Brechas): coroplético `go.Choroplethmapbox`,
+  escala BLUE_TEAL_30, panel lateral con selectbox de indicador y extremos Mayor/Menor.
+  - Resumen: indicadores TD, TO, TGP, Informalidad, Ocupados, Desocupados, Población, Ingreso.
+  - Ocupados: solo TO e Informalidad.
+  - Desocupados: solo TD e Inactividad (`tasa_inactividad = FFT_exp / PET_exp × 100`).
+- **Ciudades** (Resumen): `go.Scattermapbox` con 23 áreas metropolitanas. Coordenadas en
+  `CITY_COORDS`. Matching por `_geo_key()` + strip de sufijos `" AM"` / `" DC"`.
+  Panel lateral con selectbox (TD, TO, Informalidad) y extremos Mayor/Menor.
 
 ## 3. Salida analítica actual
 
