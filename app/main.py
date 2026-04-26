@@ -1738,36 +1738,50 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
         fmt_delta_html(pop_total, pop_total_prev) if pop_total is not None else "",
     )
 
-    # KPI 2: % Mujeres (del último periodo en df_sexo)
-    pct_mujer = None
+    # KPI 2: % Mujeres — último y penúltimo periodo
+    pct_mujer = pct_mujer_prev = None
     if not df_sexo.empty and "P3271_label" in df_sexo.columns:
-        last_p = df_sexo["periodo"].max()
-        s = df_sexo[df_sexo["periodo"] == last_p]
-        tot = s["poblacion_total_exp"].sum()
-        mujer = s[s["P3271_label"] == "Mujer"]["poblacion_total_exp"].sum()
-        pct_mujer = mujer / tot * 100 if tot > 0 else None
+        periodos_sexo = sorted(df_sexo["periodo"].unique())
+        for i, p in enumerate([periodos_sexo[-1], periodos_sexo[-2] if len(periodos_sexo) >= 2 else None]):
+            if p is None:
+                continue
+            s = df_sexo[df_sexo["periodo"] == p]
+            tot = s["poblacion_total_exp"].sum()
+            mujer = s[s["P3271_label"] == "Mujer"]["poblacion_total_exp"].sum()
+            val = mujer / tot * 100 if tot > 0 else None
+            if i == 0:
+                pct_mujer = val
+            else:
+                pct_mujer_prev = val
 
     render_kpi(
         kpi_cols[1], "Mujeres",
         f"{pct_mujer:.1f}%" if pct_mujer is not None else "—",
         "Del total de población",
-        "",
+        fmt_delta_html(pct_mujer, pct_mujer_prev, mode="pct") if pct_mujer is not None else "",
     )
 
-    # KPI 3: % Urbana (del último periodo en df_clase)
-    pct_urbana = None
+    # KPI 3: % Urbana — último y penúltimo periodo
+    pct_urbana = pct_urbana_prev = None
     if not df_clase.empty and "CLASE_label" in df_clase.columns:
-        last_p = df_clase["periodo"].max()
-        c = df_clase[df_clase["periodo"] == last_p]
-        tot = c["poblacion_total_exp"].sum()
-        urb = c[c["CLASE_label"] == "Urbano"]["poblacion_total_exp"].sum()
-        pct_urbana = urb / tot * 100 if tot > 0 else None
+        periodos_clase = sorted(df_clase["periodo"].unique())
+        for i, p in enumerate([periodos_clase[-1], periodos_clase[-2] if len(periodos_clase) >= 2 else None]):
+            if p is None:
+                continue
+            c = df_clase[df_clase["periodo"] == p]
+            tot = c["poblacion_total_exp"].sum()
+            urb = c[c["CLASE_label"] == "Urbano"]["poblacion_total_exp"].sum()
+            val = urb / tot * 100 if tot > 0 else None
+            if i == 0:
+                pct_urbana = val
+            else:
+                pct_urbana_prev = val
 
     render_kpi(
         kpi_cols[2], "Población urbana",
         f"{pct_urbana:.1f}%" if pct_urbana is not None else "—",
         "Cabecera municipal · CLASE",
-        "",
+        fmt_delta_html(pct_urbana, pct_urbana_prev, mode="pct") if pct_urbana is not None else "",
     )
 
     # KPI 4: Nivel educativo más frecuente (mayor poblacion_total_exp en último periodo)
