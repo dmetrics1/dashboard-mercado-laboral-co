@@ -1,6 +1,6 @@
 # Log de decisiones tecnicas
 
-Ultima revision: 2026-04-26 (segunda actualizacion).
+Ultima revision: 2026-04-26 (tercera actualizacion).
 
 ---
 
@@ -176,3 +176,27 @@ Ultima revision: 2026-04-26 (segunda actualizacion).
 - Seccion `"Fuera de fuerza de trabajo (FFT)"` -> `"Poblacion inactiva"`.
 - Titulo del grafico de barras -> `"Poblacion inactiva (FFT)"`.
 - Warnings obsoletos de geo eliminados en Ocupados y Desocupados (ya cubiertos por DT-014).
+
+---
+
+## DT-016 - Reduccion de KPIs en vista Poblacion y mejoras visuales de mapas (2026-04-26)
+
+**Decision:** eliminacion del KPI "Educacion predominante" en vista Poblacion; aumento de pitch en mapa departamental; tamano proporcional al valor en burbujas del mapa de ciudades.
+
+**KPI Educacion predominante eliminado:**
+
+- Vista Poblacion pasa de 4 KPIs a 3: Poblacion total, Mujeres y Poblacion urbana.
+- `st.columns(4)` cambiado a `st.columns(3)`. Todo el codigo del bloque KPI 4 (calculo de nivel modal, card con `kpi-value-sm`) eliminado.
+- Razon: el dato (nivel educativo modal) es menos relevante que los tres demograficos y repetia informacion ya visible en el grafico de barras de la seccion inferior.
+
+**Mapa departamental — efecto perspectiva:**
+
+- `mapbox pitch` aumentado de 10 a 40 grados en `plot_mapa_departamentos()`.
+- `marker_opacity` subido a 1.0, `marker_line_width` a 1.0 y `marker_line_color` cambiado a blanco 75% de opacidad.
+- Resultado: los departamentos del sur/centro aparecen en primer plano y los del norte se alejan en perspectiva, replicando el efecto visual 3D de un mapa isometrico.
+
+**Mapa de ciudades — burbujas proporcionales:**
+
+- `marker.size` cambia de valor fijo `20` a escala lineal: `18 + (v - vmin) / (vmax - vmin) * 26` (rango 18–44 px).
+- `sizemode="diameter"` asegura que el diametro sea el valor mapeado.
+- Ciudades con mayor TD/informalidad quedan visualmente mas prominentes; ciudades con valor minimo mantienen un tamano base legible.

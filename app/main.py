@@ -87,9 +87,9 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
         customdata=data[["DPTO_label", "_value_fmt"]],
         featureidkey="properties.NOMBRE_DPT",
         colorscale=BLUE_TEAL_SCALE,
-        marker_opacity=0.88,
-        marker_line_width=0.65,
-        marker_line_color=t["panel_solid"],
+        marker_opacity=1.0,
+        marker_line_width=1.0,
+        marker_line_color="rgba(255,255,255,0.75)",
         colorbar=dict(
             title="",
             thickness=11,
@@ -101,12 +101,12 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
         ),
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
-    
+
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
         mapbox_zoom=4.18,
         mapbox_center={"lat": 4.55, "lon": -74.20},
-        mapbox=dict(pitch=10, bearing=0),
+        mapbox=dict(pitch=40, bearing=0),
         height=500,
         margin={"r":0,"t":42 if title else 0,"l":0,"b":0},
         paper_bgcolor="rgba(0,0,0,0)",
@@ -153,7 +153,9 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
         lat=data["lat"], lon=data["lon"],
         mode="markers",
         marker=go.scattermapbox.Marker(
-            size=20,
+            size=data[indicador].map(
+                lambda v: 18 + (v - vmin) / (vmax - vmin + 1e-9) * 26
+            ),
             color=data[indicador],
             colorscale=BLUE_TEAL_SCALE,
             cmin=vmin, cmax=vmax,
@@ -161,7 +163,8 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
                 thickness=11, len=0.6, x=0.965, xanchor="right",
                 tickfont=dict(color=t["soft_text"], size=10), title="",
             ),
-            opacity=0.88,
+            opacity=0.9,
+            sizemode="diameter",
         ),
         customdata=data[["AREA_label", "_value_fmt"]],
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
@@ -1020,7 +1023,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor=t["chart_bg"],
-        font=dict(color=t["text"], family="IBM Plex Sans, sans-serif", size=12),
+        font=dict(color=t["text"], family="Manrope, sans-serif", size=12),
         title=dict(
             text=full_title,
             font=dict(color=t["text"], size=13, weight=600),
@@ -1716,7 +1719,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
     t = ACTIVE_THEME
 
     # KPIs de caracterización
-    kpi_cols = st.columns(4, gap="small")
+    kpi_cols = st.columns(3, gap="small")
 
     # KPI 1: Población total — usar df_sexo (incluye todos los rangos de edad,
     # no solo PET). df_sx_age excluye menores de 15 porque grupo_edad queda null.
@@ -1783,27 +1786,6 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
         "Cabecera municipal · CLASE",
         fmt_delta_html(pct_urbana, pct_urbana_prev, mode="pct") if pct_urbana is not None else "",
     )
-
-    # KPI 4: Nivel educativo más frecuente (mayor poblacion_total_exp en último periodo)
-    nivel_modal = None
-    nivel_corto = "—"
-    if not df_edu.empty and "P3042_label" in df_edu.columns:
-        last_p = df_edu["periodo"].max()
-        e = df_edu[df_edu["periodo"] == last_p].groupby("P3042_label")["poblacion_total_exp"].sum()
-        if not e.empty:
-            nivel_modal = e.idxmax()
-            # Cortar antes del paréntesis para no desbordar la card
-            nivel_corto = nivel_modal.split(" (")[0].strip() if nivel_modal else "—"
-
-    with kpi_cols[3]:
-        st.markdown(
-            f"""<div class='card'>
-<div class='kpi-label'>Nivel educativo</div>
-<div class='kpi-value-sm'>{nivel_corto}</div>
-<div class='kpi-foot'>Grupo más frecuente · P3042</div>
-</div>""",
-            unsafe_allow_html=True,
-        )
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Estructura poblacional", "Distribución por sexo y grupos de edad")
@@ -1895,6 +1877,14 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
         fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
         fig.update_layout(height=max(340, len(civil) * 38 + 140))
         st.plotly_chart(fig, use_container_width=True)
+
+    render_interpretation(
+        "La pirámide poblacional revela un proceso de transición demográfica: la base se estrecha "
+        "mientras los grupos en edad de trabajar (15-64) concentran el mayor volumen. "
+        "En términos de capital humano, el nivel educativo predominante guía la oferta laboral; "
+        "una distribución urbana superior al 75% confirma la concentración del mercado en cabeceras.",
+        title="Lectura demográfica",
+    )
 
 
 # ---------------------------------------------------------------------------

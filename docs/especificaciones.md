@@ -1,6 +1,6 @@
 # Especificaciones de Diseño: Dashboard de Mercado Laboral (GEIH)
 
-Última revisión: 2026-04-26 (segunda actualización).
+Última revisión: 2026-04-26 (tercera actualización).
 
 Este documento refleja el estado actual del código y del parquet procesado
 `data/processed/indicadores_mensuales.parquet`: 106.061 filas, 25 columnas y 22
@@ -21,7 +21,7 @@ frecuencia mensual.
 | vista | estado | contenido actual |
 |---|---|---|
 | Resumen | listo | KPIs de población, PEA, ocupados, desocupados, TD, TO, TGP, ingreso mediano, tendencia, mapa departamental y mapa de ciudades (23 áreas metropolitanas). |
-| Población | listo | 4 KPIs (población total, % mujeres, % urbana, nivel educativo) con delta; pirámide, nivel educativo, estado civil, sexo y clase urbano/rural. Responde a filtros territoriales. |
+| Población | listo | 3 KPIs (población total, % mujeres, % urbana) con delta; pirámide, nivel educativo, estado civil, sexo y clase urbano/rural. Responde a filtros territoriales. |
 | Ocupados | listo | KPIs laborales, rama de actividad, informalidad, posición ocupacional, ciudad, educación e ingresos. Mapa departamental filtrable por TO e Informalidad. |
 | Desocupados | parcial | KPIs (incluye Inactivos), pirámide, ciudad y educación. Gráfico FFT como barras. Mapa departamental filtrable por TD e Inactividad. Tiempo de búsqueda pendiente. |
 | Brechas | listo | Brecha de género, brecha etaria 15-28 vs 29+, comparativo regional y mapa. |
@@ -82,11 +82,13 @@ frecuencia mensual.
 **Mapas:**
 - **Departamental** (Resumen, Ocupados, Desocupados, Brechas): coroplético `go.Choroplethmapbox`,
   escala BLUE_TEAL_30, panel lateral con selectbox de indicador y extremos Mayor/Menor.
+  `pitch=40°` para efecto de perspectiva 3D; `marker_opacity=1.0`; bordes blancos 75%.
   - Resumen: indicadores TD, TO, TGP, Informalidad, Ocupados, Desocupados, Población, Ingreso.
   - Ocupados: solo TO e Informalidad.
   - Desocupados: solo TD e Inactividad (`tasa_inactividad = FFT_exp / PET_exp × 100`).
 - **Ciudades** (Resumen): `go.Scattermapbox` con 23 áreas metropolitanas. Coordenadas en
   `CITY_COORDS`. Matching por `_geo_key()` + strip de sufijos `" AM"` / `" DC"`.
+  Tamaño de burbuja proporcional al valor del indicador (18–44 px, `sizemode="diameter"`).
   Panel lateral con selectbox (TD, TO, Informalidad) y extremos Mayor/Menor.
 
 ## 3. Salida analítica actual
