@@ -1750,7 +1750,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
         last_p = df_clase["periodo"].max()
         c = df_clase[df_clase["periodo"] == last_p]
         tot = c["poblacion_total_exp"].sum()
-        urb = c[c["CLASE_label"] == "Urbana"]["poblacion_total_exp"].sum()
+        urb = c[c["CLASE_label"] == "Urbano"]["poblacion_total_exp"].sum()
         pct_urbana = urb / tot * 100 if tot > 0 else None
 
     render_kpi(
@@ -1762,15 +1762,18 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
 
     # KPI 4: Nivel educativo más frecuente (mayor poblacion_total_exp en último periodo)
     nivel_modal = None
+    nivel_corto = "—"
     if not df_edu.empty and "P3042_label" in df_edu.columns:
         last_p = df_edu["periodo"].max()
         e = df_edu[df_edu["periodo"] == last_p].groupby("P3042_label")["poblacion_total_exp"].sum()
         if not e.empty:
             nivel_modal = e.idxmax()
+            # Cortar antes del paréntesis para no desbordar la card
+            nivel_corto = nivel_modal.split(" (")[0].strip() if nivel_modal else "—"
 
     render_kpi(
         kpi_cols[3], "Nivel educativo",
-        nivel_modal[:20] + "…" if nivel_modal and len(nivel_modal) > 20 else (nivel_modal or "—"),
+        nivel_corto,
         "Grupo más frecuente · P3042",
         "",
     )
