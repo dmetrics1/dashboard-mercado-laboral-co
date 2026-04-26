@@ -658,7 +658,7 @@ def inject_styles(theme_name: str) -> None:
         .card {{
             border-radius: 10px;
             padding: 0.75rem 0.85rem 0.7rem;
-            min-height: 116px;
+            height: 128px;
             position: relative;
             overflow: hidden;
         }}
@@ -776,6 +776,16 @@ def inject_styles(theme_name: str) -> None:
             font-weight: 700;
             letter-spacing: -0.015em;
             line-height: 1.0;
+            overflow-wrap: anywhere;
+        }}
+        .kpi-value-sm {{
+            color: {t['text']};
+            font-family: "Fraunces", Georgia, serif;
+            font-optical-sizing: auto;
+            font-size: 1.45rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            line-height: 1.15;
             overflow-wrap: anywhere;
         }}
         .mini-value {{
@@ -1771,12 +1781,15 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             # Cortar antes del paréntesis para no desbordar la card
             nivel_corto = nivel_modal.split(" (")[0].strip() if nivel_modal else "—"
 
-    render_kpi(
-        kpi_cols[3], "Nivel educativo",
-        nivel_corto,
-        "Grupo más frecuente · P3042",
-        "",
-    )
+    with kpi_cols[3]:
+        st.markdown(
+            f"""<div class='card'>
+<div class='kpi-label'>Nivel educativo</div>
+<div class='kpi-value-sm'>{nivel_corto}</div>
+<div class='kpi-foot'>Grupo más frecuente · P3042</div>
+</div>""",
+            unsafe_allow_html=True,
+        )
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Estructura poblacional", "Distribución por sexo y grupos de edad")
