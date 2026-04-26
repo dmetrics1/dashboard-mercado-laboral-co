@@ -1,9 +1,9 @@
 # Especificaciones de Diseño: Dashboard de Mercado Laboral (GEIH)
 
-Última revisión: 2026-04-25.
+Última revisión: 2026-04-26.
 
 Este documento refleja el estado actual del código y del parquet procesado
-`data/processed/indicadores_mensuales.parquet`: 6.160 filas, 25 columnas y 12
+`data/processed/indicadores_mensuales.parquet`: 106.061 filas, 25 columnas y 22
 dimensiones analíticas.
 
 ## 1. Filtros globales
@@ -106,6 +106,16 @@ frecuencia mensual.
 | estado_civil | `P6070_label` | 288 |
 | educacion | `P3042_label` | 653 |
 | posicion_ocupacional | `P6430_label` | 384 |
+| dpto_sexo_edad | `DPTO_label`, `P3271_label`, `grupo_edad` | 25.344 |
+| dpto_educacion | `DPTO_label`, `P3042_label` | 14.759 |
+| dpto_estado_civil | `DPTO_label`, `P6070_label` | 6.912 |
+| dpto_sexo | `DPTO_label`, `P3271_label` | 2.304 |
+| dpto_clase | `DPTO_label`, `CLASE_label` | 2.304 |
+| ciudad_sexo_edad | `AREA_label`, `P3271_label`, `grupo_edad` | 24.288 |
+| ciudad_educacion | `AREA_label`, `P3042_label` | 14.054 |
+| ciudad_estado_civil | `AREA_label`, `P6070_label` | 6.624 |
+| ciudad_sexo | `AREA_label`, `P3271_label` | 2.208 |
+| ciudad_clase | `AREA_label`, `CLASE_label` | 1.104 |
 
 ## 4. Matriz de variables requeridas
 
@@ -135,8 +145,7 @@ frecuencia mensual.
 - Agregar tiempo promedio de búsqueda de empleo con `P6240`.
 - Definir y documentar hogares/viviendas si se quieren como KPIs finales.
 - Añadir granularidad trimestral móvil y anual si el dashboard la va a exponer.
-- Generar cruces geo-demográficos adicionales si se requiere que todos los
-  gráficos demográficos cambien simultáneamente por departamento/ciudad.
+- ~~Generar cruces geo-demográficos~~ — implementado: 10 dimensiones `dpto_*` y `ciudad_*` en el parquet.
 - Validar TD contra cifras oficiales DANE en notebook dedicado.
 
 ## 6. Decisiones metodológicas vigentes

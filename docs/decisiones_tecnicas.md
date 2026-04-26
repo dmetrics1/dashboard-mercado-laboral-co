@@ -1,6 +1,6 @@
 # Log de decisiones tecnicas
 
-Ultima revision: 2026-04-25.
+Ultima revision: 2026-04-26.
 
 ---
 
@@ -126,3 +126,21 @@ Ultima revision: 2026-04-25.
 **Decision:** aplicar selectores CSS más agresivos (`[data-baseweb="list-item"]`) y colores sólidos para el resaltado de opciones en los menús desplegables.
 
 **Razon:** los estilos por defecto de Streamlit/BaseWeb en modo claro aplicaban un fondo oscuro con texto oscuro al seleccionar/hover, haciendo las opciones ilegibles. Se forzó un color de fondo gris claro sólido y se aseguró que todos los elementos hijos hereden el color de texto oscuro.
+
+---
+
+## DT-014 - Cruces geo x demografico para vista Poblacion
+
+**Decision:** agregar 10 dimensiones geo x demografico al ETL (`dpto_sexo_edad`, `dpto_educacion`, `dpto_estado_civil`, `dpto_sexo`, `dpto_clase` y sus equivalentes `ciudad_*`) para que la vista Poblacion responda a los filtros de departamento y ciudad.
+
+**Razon:** el parquet original solo calculaba indicadores demograficos a nivel nacional, dejando los filtros territoriales sin efecto en la vista Poblacion. La solicion correcta es generar los cruces en el ETL (no en el dashboard) para mantener la separacion entre capa de datos y capa de presentacion.
+
+**Implementacion:**
+
+- `src/etl.py -> DIMENSIONES`: 10 entradas nuevas con columnas de corte combinadas (p. ej. `["DPTO_label", "P3271_label", "grupo_edad"]`). El ETL reutiliza `calcular_dimension()` sin modificaciones; el `pl.concat(..., how="diagonal_relaxed")` maneja las columnas extras con nulls.
+- `app/main.py`: helper `_dem(base_dim)` definido en el cuerpo del script antes de los filtros demograficos. Cuando `geo_level == "Departamento"` y hay departamento seleccionado, `_dem` elige la dimension `dpto_<base_dim>`; si esta vacia (departamento sin datos), cae al agregado nacional. Mismo patron para ciudades.
+- El aviso informativo de `view_caracterizacion` ("filtro territorial aun no modifica vistas demograficas") fue eliminado.
+
+**Impacto en parquet:** 6.160 filas -> 106.061 filas. Tamanio en disco sigue siendo manejable para uso local de Streamlit.
+
+**Vistas beneficiadas:** Poblacion (piramide, educacion, estado civil, clase, sexo), Ocupados (piramide de ocupados, educacion e ingresos) y Desocupados (piramide de desocupados, educacion). Todos usan `df_sx_age`, `df_edu`, `df_civil`, `df_sexo` o `df_clase` que ahora pasan por `_dem()`.
