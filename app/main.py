@@ -126,44 +126,52 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
         .last()
         .dropna(subset=[indicador])
     )
-    # Normalizar nombre para lookup en CITY_COORDS
-    def match_city(label):
-        for key in CITY_COORDS:
-            if key.lower().split()[0] in label.lower() or label.lower().split()[0] in key.lower():
-                return key
+
+    # Lookup robusto: strip sufijos " AM"/" DC" + normalización NFKD
+    _coord_lookup = {_geo_key(k): v for k, v in CITY_COORDS.items()}
+
+    def _match_coords(label):
+        clean = label.replace(" AM", "").replace(" DC", "").strip()
+        coords = _coord_lookup.get(_geo_key(clean))
+        if coords:
+            return coords
+        first = _geo_key(clean.split()[0])
+        for norm_key, c in _coord_lookup.items():
+            if norm_key.startswith(first) or first.startswith(norm_key):
+                return c
         return None
-    data["_city_key"] = data["AREA_label"].map(match_city)
-    data = data.dropna(subset=["_city_key"])
-    data["lat"] = data["_city_key"].map(lambda k: CITY_COORDS[k][0])
-    data["lon"] = data["_city_key"].map(lambda k: CITY_COORDS[k][1])
+
+    data["_coords"] = data["AREA_label"].map(_match_coords)
+    data = data[data["_coords"].notna()].copy()
+    data["lat"] = data["_coords"].map(lambda c: c[0])
+    data["lon"] = data["_coords"].map(lambda c: c[1])
     data["_value_fmt"] = data[indicador].map(lambda v: _format_map_value(indicador, v))
     label = MAP_INDICATORS.get(indicador, {}).get("label", indicador)
     vmin, vmax = data[indicador].min(), data[indicador].max()
 
     fig = go.Figure(go.Scattermapbox(
         lat=data["lat"], lon=data["lon"],
-        mode="markers+text",
+        mode="markers",
         marker=go.scattermapbox.Marker(
-            size=18,
+            size=20,
             color=data[indicador],
             colorscale=BLUE_TEAL_SCALE,
             cmin=vmin, cmax=vmax,
-            colorbar=dict(thickness=11, len=0.6, x=0.965, xanchor="right",
-                          tickfont=dict(color=t["soft_text"], size=10), title=""),
-            opacity=0.9,
+            colorbar=dict(
+                thickness=11, len=0.6, x=0.965, xanchor="right",
+                tickfont=dict(color=t["soft_text"], size=10), title="",
+            ),
+            opacity=0.88,
         ),
-        text=data["AREA_label"],
-        textposition="top center",
-        textfont=dict(size=9, color=t["soft_text"]),
         customdata=data[["AREA_label", "_value_fmt"]],
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
-        mapbox_zoom=4.0,
+        mapbox_zoom=4.2,
         mapbox_center={"lat": 4.55, "lon": -74.20},
-        height=440,
-        margin={"r":0, "t":0, "l":0, "b":0},
+        height=490,
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
     )
@@ -267,7 +275,7 @@ MAP_INDICATORS = {
 CITY_COORDS = {
     "Medellín":       (6.2518,  -75.5636),
     "Barranquilla":   (10.9639, -74.7964),
-    "Bogotá D.C.":    (4.7110,  -74.0721),
+    "Bogotá":         (4.7110,  -74.0721),
     "Cartagena":      (10.3910, -75.4794),
     "Manizales":      (5.0703,  -75.5138),
     "Montería":       (8.7575,  -75.8811),
@@ -1633,18 +1641,47 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label):
         render_section("Mapa regional", "Cambia el indicador para ver la geografía del mercado")
         render_map_module(df_dep_mapa, "TD", "resumen", "")
 
-        # Mapa de ciudades
+    # Mapa de ciudades (independiente del mapa departamental)
+    if not df_city.empty and "AREA_label" in df_city.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-        render_section("Mapa de ciudades", "TD por área metropolitana · último periodo disponible")
-        city_ind_col, city_map_col = st.columns([1, 3], gap="large")
-        with city_ind_col:
-            city_ind = st.selectbox(
-                "Indicador ciudad",
-                options=["TD", "TO", "tasa_informalidad"],
-                format_func=lambda c: MAP_INDICATORS[c]["select"],
-                key="resumen_city_indicator",
-                label_visibility="collapsed",
-            )
+        render_section("Mapa de ciudades", "Indicadores por área metropolitana · último periodo")
+        city_map_col, city_ctrl_col = st.columns([4.05, 1.35], gap="medium")
+        with city_ctrl_col:
+            with st.container(border=True, height=530, key="resumen_city_panel"):
+                st.markdown(
+                    "<div class='map-panel-head'>"
+                    "<div class='map-control-title'>Indicador del mapa</div>"
+                    "<div class='map-control-sub'>Variable por área metropolitana.</div>"
+                    "</div>"
+                    "<div class='map-field-label'>Indicador</div>",
+                    unsafe_allow_html=True,
+                )
+                city_ind = st.selectbox(
+                    "Indicador ciudad",
+                    options=["TD", "TO", "tasa_informalidad"],
+                    format_func=lambda c: MAP_INDICATORS[c]["select"],
+                    key="resumen_city_indicator",
+                    label_visibility="collapsed",
+                )
+                city_vals = (
+                    df_city.sort_values("periodo")
+                    .groupby("AREA_label", as_index=False)[city_ind]
+                    .last()
+                    .dropna(subset=[city_ind])
+                )
+                if not city_vals.empty:
+                    for lbl, item in [
+                        ("Mayor", city_vals.loc[city_vals[city_ind].idxmax()]),
+                        ("Menor", city_vals.loc[city_vals[city_ind].idxmin()]),
+                    ]:
+                        st.markdown(
+                            f"<div class='map-extreme-card'>"
+                            f"<div class='map-extreme-label'>{lbl}</div>"
+                            f"<div class='map-extreme-value'>{_format_map_value(city_ind, item[city_ind])}</div>"
+                            f"<div class='map-extreme-name'>{item['AREA_label']}</div>"
+                            f"</div>",
+                            unsafe_allow_html=True,
+                        )
         with city_map_col:
             st.plotly_chart(
                 plot_mapa_ciudades(df_city, city_ind),
@@ -1731,9 +1768,9 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
             nivel_modal = e.idxmax()
 
     render_kpi(
-        kpi_cols[3], "Nivel educativo predominante",
-        nivel_modal[:22] + "…" if nivel_modal and len(nivel_modal) > 22 else (nivel_modal or "—"),
-        "Mayor grupo · P3042",
+        kpi_cols[3], "Nivel educativo",
+        nivel_modal[:20] + "…" if nivel_modal and len(nivel_modal) > 20 else (nivel_modal or "—"),
+        "Grupo más frecuente · P3042",
         "",
     )
 
@@ -1894,14 +1931,6 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             st.plotly_chart(fig, use_container_width=True)
     with right:
         plot_pyramid(df_sx_age, "ocupados_exp", "Pirámide de ocupados", "Por sexo y grupo de edad · P3271 × P6040")
-
-    if geo_level != "Sin filtro":
-        st.markdown(
-            f"""<div class='placeholder-card' style='margin:0.5rem 0; padding:1.2rem;'>
-                ℹ️ Pirámides y cruces educación/posición permanecen nacionales hasta ampliar el ETL con dimensiones geo-demográficas.
-            </div>""",
-            unsafe_allow_html=True,
-        )
 
     # Tarea 3.c: Sección de Informalidad Laboral
     if not df_sector.empty and {"RAMA2D_R4_label", "tasa_informalidad"}.issubset(df_sector.columns):
@@ -2091,13 +2120,6 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
             fig.update_layout(height=H_PYRAMID)
             st.plotly_chart(fig, use_container_width=True)
 
-    if geo_level != "Sin filtro":
-        st.markdown(
-            "<div class='placeholder-card' style='margin:0.5rem 0'>ℹ️ "
-            "Pirámide y educación permanecen nacionales hasta ampliar el ETL con cruces geo-demográficos.</div>",
-            unsafe_allow_html=True,
-        )
-
     if not df_edu.empty and "P3042_label" in df_edu.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         render_section("Desocupados por nivel educativo", "P3042 · promedio del periodo seleccionado")
@@ -2127,9 +2149,9 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
                 y=fft_trend["FFT_exp"],
                 marker_color=BT_PALE,
                 marker_line_width=0,
-                hovertemplate="<b>%{x|%b %Y}</b><br>FFT: %{y:,.0f}<extra></extra>",
+                hovertemplate="<b>%{x|%b %Y}</b><br>Inactivos: %{y:,.0f}<extra></extra>",
             ))
-            fig = fig_base(fig, "Población fuera de la fuerza de trabajo", f"Contexto: {context_label}")
+            fig = fig_base(fig, "Población inactiva (FFT)", f"Contexto: {context_label}")
             fig.update_xaxes(tickformat="%b %Y", dtick="M3")
             fig.update_yaxes(title_text="Personas")
             fig.update_layout(height=H_SMALL)
