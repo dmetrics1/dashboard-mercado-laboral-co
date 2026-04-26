@@ -658,7 +658,7 @@ def inject_styles(theme_name: str) -> None:
         .card {{
             border-radius: 10px;
             padding: 0.75rem 0.85rem 0.7rem;
-            height: 128px;
+            height: 148px;
             position: relative;
             overflow: hidden;
         }}
