@@ -1559,15 +1559,6 @@ def view_resumen(df_context, df_dep, df_dep_mapa, context_label):
 # ---------------------------------------------------------------------------
 def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel):
     t = ACTIVE_THEME
-    if geo_level != "Sin filtro":
-        st.markdown(
-            "<div class='placeholder-card' style='margin-bottom:0.7rem'>ℹ️ "
-            "El filtro territorial aún no modifica las vistas demográficas porque el parquet "
-            "no guarda cruces <em>geografía × demografía</em>. Aplicar en próxima versión del ETL."
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
     render_section("Estructura poblacional", "Distribución por sexo y grupos de edad")
     left, right = st.columns(2, gap="large")
     with left:
@@ -2497,13 +2488,29 @@ df_nac         = filtrar(df_all, "nacional",            anos_sel, geo_level, geo
 df_dep         = filtrar(df_all, "departamento",        anos_sel, geo_level, geo_sel)
 df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, "Sin filtro", "Todas")
 df_city        = filtrar(df_all, "ciudad",              anos_sel, geo_level, geo_sel)
-df_sexo        = filtrar(df_all, "sexo",                anos_sel, geo_level, geo_sel)
-df_sx_age      = filtrar(df_all, "sexo_edad",           anos_sel, geo_level, geo_sel)
+
+# Para la vista Población: usar cruce geo × demográfico cuando hay filtro activo
+if geo_level == "Departamento" and geo_sel not in ("Todos", "Todas"):
+    _dem_prefix = "dpto_"
+elif geo_level == "Ciudad" and geo_sel not in ("Todos", "Todas"):
+    _dem_prefix = "ciudad_"
+else:
+    _dem_prefix = ""
+
+def _dem(base_dim: str):
+    if _dem_prefix:
+        r = filtrar(df_all, _dem_prefix + base_dim, anos_sel, geo_level, geo_sel)
+        if not r.empty:
+            return r
+    return filtrar(df_all, base_dim, anos_sel, geo_level, geo_sel)
+
+df_sexo        = _dem("sexo")
+df_sx_age      = _dem("sexo_edad")
 df_edad_brecha = filtrar(df_all, "edad_brecha",         anos_sel, geo_level, geo_sel)
 df_sector      = filtrar(df_all, "sector",              anos_sel, geo_level, geo_sel)
-df_clase       = filtrar(df_all, "clase",               anos_sel, geo_level, geo_sel)
-df_civil       = filtrar(df_all, "estado_civil",        anos_sel, geo_level, geo_sel)
-df_edu         = filtrar(df_all, "educacion",           anos_sel, geo_level, geo_sel)
+df_clase       = _dem("clase")
+df_civil       = _dem("estado_civil")
+df_edu         = _dem("educacion")
 df_pos         = filtrar(df_all, "posicion_ocupacional", anos_sel, geo_level, geo_sel)
 
 if df_nac.empty:

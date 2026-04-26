@@ -38,6 +38,17 @@ DIMENSIONES: dict[str, list[str] | None] = {
     "estado_civil": ["P6070_label"],
     "educacion": ["P3042_label"],
     "posicion_ocupacional": ["P6430_label"],
+    # Cruce geo × demográfico — habilita filtros territoriales en vista Población
+    "dpto_sexo_edad":    ["DPTO_label", "P3271_label", "grupo_edad"],
+    "dpto_educacion":    ["DPTO_label", "P3042_label"],
+    "dpto_estado_civil": ["DPTO_label", "P6070_label"],
+    "dpto_sexo":         ["DPTO_label", "P3271_label"],
+    "dpto_clase":        ["DPTO_label", "CLASE_label"],
+    "ciudad_sexo_edad":    ["AREA_label", "P3271_label", "grupo_edad"],
+    "ciudad_educacion":    ["AREA_label", "P3042_label"],
+    "ciudad_estado_civil": ["AREA_label", "P6070_label"],
+    "ciudad_sexo":         ["AREA_label", "P3271_label"],
+    "ciudad_clase":        ["AREA_label", "CLASE_label"],
 }
 
 DATA_PROCESSED_DIR = config.DATA_PROCESSED_DIR
