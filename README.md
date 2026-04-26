@@ -71,7 +71,7 @@
 
 ```bash
 git clone <repo-url>
-cd dashboard_mercado_laboral_co
+cd portafolio/dashboard_mercado_laboral_co
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt

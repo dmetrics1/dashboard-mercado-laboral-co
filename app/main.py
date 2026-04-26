@@ -115,6 +115,60 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
     )
     return fig
 
+
+def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
+    t = ACTIVE_THEME
+    if df_city.empty or "AREA_label" not in df_city.columns or indicador not in df_city.columns:
+        return go.Figure()
+    data = (
+        df_city.sort_values("periodo")
+        .groupby("AREA_label", as_index=False)[indicador]
+        .last()
+        .dropna(subset=[indicador])
+    )
+    # Normalizar nombre para lookup en CITY_COORDS
+    def match_city(label):
+        for key in CITY_COORDS:
+            if key.lower().split()[0] in label.lower() or label.lower().split()[0] in key.lower():
+                return key
+        return None
+    data["_city_key"] = data["AREA_label"].map(match_city)
+    data = data.dropna(subset=["_city_key"])
+    data["lat"] = data["_city_key"].map(lambda k: CITY_COORDS[k][0])
+    data["lon"] = data["_city_key"].map(lambda k: CITY_COORDS[k][1])
+    data["_value_fmt"] = data[indicador].map(lambda v: _format_map_value(indicador, v))
+    label = MAP_INDICATORS.get(indicador, {}).get("label", indicador)
+    vmin, vmax = data[indicador].min(), data[indicador].max()
+
+    fig = go.Figure(go.Scattermapbox(
+        lat=data["lat"], lon=data["lon"],
+        mode="markers+text",
+        marker=go.scattermapbox.Marker(
+            size=18,
+            color=data[indicador],
+            colorscale=BLUE_TEAL_SCALE,
+            cmin=vmin, cmax=vmax,
+            colorbar=dict(thickness=11, len=0.6, x=0.965, xanchor="right",
+                          tickfont=dict(color=t["soft_text"], size=10), title=""),
+            opacity=0.9,
+        ),
+        text=data["AREA_label"],
+        textposition="top center",
+        textfont=dict(size=9, color=t["soft_text"]),
+        customdata=data[["AREA_label", "_value_fmt"]],
+        hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
+    ))
+    fig.update_layout(
+        mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
+        mapbox_zoom=4.0,
+        mapbox_center={"lat": 4.55, "lon": -74.20},
+        height=440,
+        margin={"r":0, "t":0, "l":0, "b":0},
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
 def render_interpretation(text: str, title: str = "Lectura"):
     st.markdown(f"""
 <div class="interpretation-block">
@@ -201,6 +255,39 @@ MAP_INDICATORS = {
     "desocupados_exp": {"label": "Desocupados", "select": "Desocupados", "short": "Desocupados", "suffix": "", "kind": "count"},
     "poblacion_total_exp": {"label": "Población total", "select": "Población", "short": "Población", "suffix": "", "kind": "count"},
     "ingreso_mediano": {"label": "Ingreso mediano", "select": "Ingreso", "short": "Ingreso", "suffix": "", "kind": "money"},
+    "tasa_inactividad": {
+        "label": "Tasa de inactividad (FFT/PET)",
+        "select": "Inactividad",
+        "short": "Inactividad",
+        "suffix": "%",
+        "kind": "pct"
+    },
+}
+
+CITY_COORDS = {
+    "Medellín":       (6.2518,  -75.5636),
+    "Barranquilla":   (10.9639, -74.7964),
+    "Bogotá D.C.":    (4.7110,  -74.0721),
+    "Cartagena":      (10.3910, -75.4794),
+    "Manizales":      (5.0703,  -75.5138),
+    "Montería":       (8.7575,  -75.8811),
+    "Villavicencio":  (4.1420,  -73.6266),
+    "Pasto":          (1.2136,  -77.2811),
+    "Cúcuta":         (7.8939,  -72.5078),
+    "Pereira":        (4.8133,  -75.6961),
+    "Bucaramanga":    (7.1254,  -73.1198),
+    "Ibagué":         (4.4389,  -75.2322),
+    "Cali":           (3.4516,  -76.5320),
+    "Quibdó":         (5.6919,  -76.6583),
+    "Neiva":          (2.9273,  -75.2819),
+    "Riohacha":       (11.5444, -72.9072),
+    "Santa Marta":    (11.2408, -74.1990),
+    "Valledupar":     (10.4631, -73.2532),
+    "Sincelejo":      (9.3047,  -75.3978),
+    "Armenia":        (4.5339,  -75.6811),
+    "Popayán":        (2.4448,  -76.6147),
+    "Florencia":      (1.6144,  -75.6062),
+    "Tunja":          (5.5353,  -73.3678),
 }
 
 # Claves cortas usadas en routing y query_params
@@ -1271,7 +1358,9 @@ def latest_departments_for_indicator(df_dep: pd.DataFrame, indicador: str) -> pd
     )
 
 
-def render_map_module(df_dep: pd.DataFrame, default_indicator: str, key_prefix: str, title_prefix: str):
+def render_map_module(df_dep: pd.DataFrame, default_indicator: str,
+                      key_prefix: str, title_prefix: str,
+                      indicators: list[str] | None = None):
     if df_dep.empty or "DPTO_label" not in df_dep.columns:
         placeholder(
             "El mapa regional aparecerá al regenerar el parquet con la dimensión <code>departamento</code>.",
@@ -1279,7 +1368,7 @@ def render_map_module(df_dep: pd.DataFrame, default_indicator: str, key_prefix: 
         )
         return
 
-    options = available_map_indicators(df_dep)
+    options = indicators if indicators else available_map_indicators(df_dep)
     if not options:
         placeholder("No hay indicadores departamentales disponibles para el mapa.", "🗺️")
         return
@@ -1462,7 +1551,7 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
 # ---------------------------------------------------------------------------
 # Vista 1: Resumen ejecutivo
 # ---------------------------------------------------------------------------
-def view_resumen(df_context, df_dep, df_dep_mapa, context_label):
+def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1544,6 +1633,25 @@ def view_resumen(df_context, df_dep, df_dep_mapa, context_label):
         render_section("Mapa regional", "Cambia el indicador para ver la geografía del mercado")
         render_map_module(df_dep_mapa, "TD", "resumen", "")
 
+        # Mapa de ciudades
+        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+        render_section("Mapa de ciudades", "TD por área metropolitana · último periodo disponible")
+        city_ind_col, city_map_col = st.columns([1, 3], gap="large")
+        with city_ind_col:
+            city_ind = st.selectbox(
+                "Indicador ciudad",
+                options=["TD", "TO", "tasa_informalidad"],
+                format_func=lambda c: MAP_INDICATORS[c]["select"],
+                key="resumen_city_indicator",
+                label_visibility="collapsed",
+            )
+        with city_map_col:
+            st.plotly_chart(
+                plot_mapa_ciudades(df_city, city_ind),
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
+
     render_interpretation(
         "La tendencia muestra una <b>TD</b> que oscila alrededor del 10% nacional, "
         "mientras la <b>TO</b> y la <b>TGP</b> avanzan con menor volatilidad por encima del 55%. "
@@ -1559,6 +1667,77 @@ def view_resumen(df_context, df_dep, df_dep_mapa, context_label):
 # ---------------------------------------------------------------------------
 def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel):
     t = ACTIVE_THEME
+
+    # KPIs de caracterización
+    kpi_cols = st.columns(4, gap="small")
+
+    # KPI 1: Población total (suma sobre sexo-edad en último periodo)
+    pop_total = None
+    pop_total_prev = None
+    if not df_sx_age.empty and "poblacion_total_exp" in df_sx_age.columns:
+        pop_by_period = (
+            df_sx_age.groupby("periodo")["poblacion_total_exp"].sum().sort_index()
+        )
+        if len(pop_by_period) >= 1:
+            pop_total = pop_by_period.iloc[-1]
+        if len(pop_by_period) >= 2:
+            pop_total_prev = pop_by_period.iloc[-2]
+
+    render_kpi(
+        kpi_cols[0], "Población total",
+        fmt_metric(pop_total) if pop_total is not None else "—",
+        "Expandida · FEX_C18",
+        fmt_delta_html(pop_total, pop_total_prev) if pop_total is not None else "",
+    )
+
+    # KPI 2: % Mujeres (del último periodo en df_sexo)
+    pct_mujer = None
+    if not df_sexo.empty and "P3271_label" in df_sexo.columns:
+        last_p = df_sexo["periodo"].max()
+        s = df_sexo[df_sexo["periodo"] == last_p]
+        tot = s["poblacion_total_exp"].sum()
+        mujer = s[s["P3271_label"] == "Mujer"]["poblacion_total_exp"].sum()
+        pct_mujer = mujer / tot * 100 if tot > 0 else None
+
+    render_kpi(
+        kpi_cols[1], "Mujeres",
+        f"{pct_mujer:.1f}%" if pct_mujer is not None else "—",
+        "Del total de población",
+        "",
+    )
+
+    # KPI 3: % Urbana (del último periodo en df_clase)
+    pct_urbana = None
+    if not df_clase.empty and "CLASE_label" in df_clase.columns:
+        last_p = df_clase["periodo"].max()
+        c = df_clase[df_clase["periodo"] == last_p]
+        tot = c["poblacion_total_exp"].sum()
+        urb = c[c["CLASE_label"] == "Urbana"]["poblacion_total_exp"].sum()
+        pct_urbana = urb / tot * 100 if tot > 0 else None
+
+    render_kpi(
+        kpi_cols[2], "Población urbana",
+        f"{pct_urbana:.1f}%" if pct_urbana is not None else "—",
+        "Cabecera municipal · CLASE",
+        "",
+    )
+
+    # KPI 4: Nivel educativo más frecuente (mayor poblacion_total_exp en último periodo)
+    nivel_modal = None
+    if not df_edu.empty and "P3042_label" in df_edu.columns:
+        last_p = df_edu["periodo"].max()
+        e = df_edu[df_edu["periodo"] == last_p].groupby("P3042_label")["poblacion_total_exp"].sum()
+        if not e.empty:
+            nivel_modal = e.idxmax()
+
+    render_kpi(
+        kpi_cols[3], "Nivel educativo predominante",
+        nivel_modal[:22] + "…" if nivel_modal and len(nivel_modal) > 22 else (nivel_modal or "—"),
+        "Mayor grupo · P3042",
+        "",
+    )
+
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Estructura poblacional", "Distribución por sexo y grupos de edad")
     left, right = st.columns(2, gap="large")
     with left:
@@ -1653,7 +1832,7 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
 # ---------------------------------------------------------------------------
 # Vista 3: Mercado de ocupados
 # ---------------------------------------------------------------------------
-def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, context_label, geo_level):
+def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_dep_mapa, context_label, geo_level):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1846,11 +2025,19 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, con
         title="Lectura ocupacional",
     )
 
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    render_section("Distribución territorial", "Tasa de ocupación e informalidad por departamento")
+    render_map_module(
+        df_dep_mapa, "TO", "ocupados",
+        "Ocupados",
+        indicators=["TO", "tasa_informalidad"],
+    )
+
 
 # ---------------------------------------------------------------------------
 # Vista 4: Dinámica de desocupados
 # ---------------------------------------------------------------------------
-def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_level):
+def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, context_label, geo_level):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1870,9 +2057,9 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
             fmt_delta_html(row.get("TD"), prev.get("TD") if prev is not None else None, mode="pct", invert=True),
         )
         render_kpi(
-            cols[2], "Fuera de fuerza de trabajo (FFT)",
+            cols[2], "Inactivos",
             fmt_metric(row.get("FFT_exp", 0)),
-            "No busca ni trabaja · FFT_exp",
+            "Fuera del mercado laboral · FFT_exp",
             fmt_delta_html(row.get("FFT_exp"), prev.get("FFT_exp") if prev is not None else None, invert=True),
         )
 
@@ -1931,7 +2118,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
 
     if "FFT_exp" in df_context.columns and not df_context.empty:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
-        render_section("Fuera de fuerza de trabajo (FFT)", "Evolución mensual · personas fuera del mercado laboral")
+        render_section("Población inactiva", "Evolución mensual · personas fuera de la fuerza de trabajo")
         fft_trend = df_context.sort_values("periodo")[["periodo", "FFT_exp"]].dropna(subset=["FFT_exp"])
         if not fft_trend.empty:
             fig = go.Figure()
@@ -1947,6 +2134,14 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_
             fig.update_yaxes(title_text="Personas")
             fig.update_layout(height=H_SMALL)
             st.plotly_chart(fig, use_container_width=True)
+
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    render_section("Distribución territorial", "Desempleo e inactividad por departamento")
+    render_map_module(
+        df_dep_mapa, "TD", "desocupados",
+        "Desocupados",
+        indicators=["TD", "tasa_inactividad"],
+    )
 
     render_interpretation(
         "El desempleo está concentrado: pocas áreas metropolitanas suelen agrupar buena parte de los "
@@ -2489,6 +2684,12 @@ df_dep         = filtrar(df_all, "departamento",        anos_sel, geo_level, geo
 df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, "Sin filtro", "Todas")
 df_city        = filtrar(df_all, "ciudad",              anos_sel, geo_level, geo_sel)
 
+if "FFT_exp" in df_dep_mapa.columns and "PET_exp" in df_dep_mapa.columns:
+    df_dep_mapa = df_dep_mapa.copy()
+    df_dep_mapa["tasa_inactividad"] = (
+        df_dep_mapa["FFT_exp"] / df_dep_mapa["PET_exp"].replace(0, float("nan")) * 100
+    )
+
 # Para la vista Población: usar cruce geo × demográfico cuando hay filtro activo
 if geo_level == "Departamento" and geo_sel not in ("Todos", "Todas"):
     _dem_prefix = "dpto_"
@@ -2530,13 +2731,13 @@ with body_slot:
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
-        view_resumen(df_context, df_dep, df_dep_mapa, context_label)
+        view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label)
     elif vista == "poblacion":
         view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel)
     elif vista == "ocupados":
-        view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, context_label, geo_level)
+        view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_dep_mapa, context_label, geo_level)
     elif vista == "desocupados":
-        view_desocupados(df_context, df_sx_age, df_city, df_edu, context_label, geo_level)
+        view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, context_label, geo_level)
     elif vista == "brechas":
         view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level)
     elif vista == "instrucciones":
