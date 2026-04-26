@@ -1708,12 +1708,13 @@ def view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_lev
     # KPIs de caracterización
     kpi_cols = st.columns(4, gap="small")
 
-    # KPI 1: Población total (suma sobre sexo-edad en último periodo)
+    # KPI 1: Población total — usar df_sexo (incluye todos los rangos de edad,
+    # no solo PET). df_sx_age excluye menores de 15 porque grupo_edad queda null.
     pop_total = None
     pop_total_prev = None
-    if not df_sx_age.empty and "poblacion_total_exp" in df_sx_age.columns:
+    if not df_sexo.empty and "poblacion_total_exp" in df_sexo.columns:
         pop_by_period = (
-            df_sx_age.groupby("periodo")["poblacion_total_exp"].sum().sort_index()
+            df_sexo.groupby("periodo")["poblacion_total_exp"].sum().sort_index()
         )
         if len(pop_by_period) >= 1:
             pop_total = pop_by_period.iloc[-1]
