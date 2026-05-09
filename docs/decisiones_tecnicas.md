@@ -1,6 +1,6 @@
 # Log de decisiones tecnicas
 
-Ultima revision: 2026-04-26 (tercera actualizacion).
+Ultima revision: 2026-05-09 (cuarta actualizacion).
 
 ---
 
@@ -200,3 +200,43 @@ Ultima revision: 2026-04-26 (tercera actualizacion).
 - `marker.size` cambia de valor fijo `20` a escala lineal: `18 + (v - vmin) / (vmax - vmin) * 26` (rango 18–44 px).
 - `sizemode="diameter"` asegura que el diametro sea el valor mapeado.
 - Ciudades con mayor TD/informalidad quedan visualmente mas prominentes; ciudades con valor minimo mantienen un tamano base legible.
+
+---
+
+## DT-017 - Filtro de mes, marcador de tendencia, KPI compacto y resaltado geografico (2026-05-09)
+
+**Decision:** conjunto de mejoras de UX e interactividad aplicadas a controles, KPIs, grafico de tendencia y mapas.
+
+**Filtro de mes en controles:**
+
+- `render_controls()` agrega un selectbox de mes despues del selector de ano. Devuelve `(ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel)`.
+- `filtrar()` recibe el nuevo parametro `meses_sel` y aplica el filtro de mes ademas del de ano.
+- La funcion de resumen de filtros (`render_filters_summary`) muestra un chip adicional con el mes activo.
+
+**Grafico de tendencia con marcador mensual:**
+
+- Cuando el usuario selecciona un ano especifico, el grafico muestra solo los 12 meses de ese ano (dtick `M1`). Cuando es "Todos" muestra la serie completa (dtick `M3`).
+- `df_tendencia` se calcula sin filtro de mes para conservar la linea de fondo completa.
+- Cuando se selecciona un mes, se agrega un marcador scatter sobre la linea de tendencia en el punto del mes elegido, sin ocultar los demas.
+
+**KPI cards rediseñadas:**
+
+- Eliminados bloque delta (`±N vs periodo ant.`) y pie (`Expandida · personas`).
+- Titulo y valor centrados horizontalmente con `text-align: center`.
+- Altura cambiada de `height:148px` fijo a `height:auto` con flex vertical, lo que hace las cards mas compactas.
+
+**Leyenda del grafico de lineas bajada:**
+
+- `legend.y` cambiado de `1.06` a `-0.18`; `yanchor` de `"bottom"` a `"top"`.
+- Margen inferior del layout subido de 36 a 56 px para acomodar la leyenda sin recorte.
+
+**Resaltado geografico en mapas (sin ocultar otras entidades):**
+
+- `plot_mapa_departamentos`: cuando hay departamento seleccionado se agrega una segunda traza `Choroplethmapbox` sobre el mismo poligono con relleno naranja semitransparente (rgba 20%) y borde naranja 3 px (`#E05A2A`). El resto de departamentos permanece visible.
+- `plot_mapa_ciudades`: cuando hay ciudad seleccionada se agrega una traza `Scattermapbox` con circulo naranja (`#E05A2A`) de diametro `base_size + 14` detras de la burbuja principal, mas una traza de texto encima. Todas las demas ciudades permanecen visibles.
+- `df_city_mapa` creado sin filtro geografico (analogo a `df_dep_mapa`) para que el mapa de ciudades siempre muestre todas las ciudades independientemente del filtro de departamento o ciudad activo.
+- Color naranja `#E05A2A` elegido por contraste optico con el colorscale azul-teal: elimina confusion visual entre el anillo de seleccion y las burbujas normales.
+
+**Correccion de titulo del mapa departamental:**
+
+- Cuando `title_prefix` esta vacio, el subtitulo encima del mapa mostraba `": TO"`. Corregido: si `title_prefix` es vacio se muestra el nombre completo del indicador (`meta['label']`); si tiene valor se usa el formato `"Prefijo: SIGLA"` como antes.

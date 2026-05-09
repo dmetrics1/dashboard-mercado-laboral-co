@@ -34,11 +34,13 @@
 
 ## Funcionalidades clave
 
-- **Optimización Visual:** Homogeneización de alturas de gráficos, reducción de espacios entre secciones y alineación vertical milimétrica entre el panel de navegación y el contenido principal.
-- **Desacoplamiento Territorial:** El mapa regional ahora se mantiene independiente de los filtros locales para proporcionar un contexto nacional constante.
-- **Métricas Avanzadas:** Inclusión del KPI y tendencia de "Fuera de la Fuerza de Trabajo" (FFT).
+- **Filtros globales** por año, mes y nivel territorial (nacional / departamento / ciudad) con resumen de chips activos.
+- **Gráfico de tendencia interactivo:** muestra la serie completa o los 12 meses de un año; añade un marcador puntual cuando se selecciona un mes específico.
+- **Resaltado geográfico:** al seleccionar un departamento o ciudad se resalta en el mapa con borde naranja sin ocultar el resto del territorio.
+- **Mapas independientes:** el mapa de ciudades siempre muestra todas las áreas metropolitanas independientemente del filtro de departamento activo.
+- **KPI cards compactas:** titulo y valor centrados, sin texto de delta ni pie de página.
 - **Tema dual** oscuro / claro con inyección de CSS personalizada y tipografía premium (`Fraunces` & `Manrope`).
-- **Filtros globales** por año y nivel territorial con resumen de chips activos.
+- **Métricas Avanzadas:** TD, TO, TGP, informalidad, ingreso laboral mediano, FFT por periodo, departamento y ciudad.
 
 ---
 

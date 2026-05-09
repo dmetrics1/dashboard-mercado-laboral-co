@@ -102,7 +102,7 @@ def plot_mapa_departamentos(df, indicador="TD", title="", geo_sel="Todos"):
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
 
-    # Highlight del departamento seleccionado: borde grueso sobre el mismo polígono
+    # Highlight del departamento seleccionado: relleno semitransparente + borde grueso
     if geo_sel not in ("Todos", "Todas", "", None):
         sel_row = data[data["DPTO_label"] == geo_sel]
         if not sel_row.empty:
@@ -111,10 +111,10 @@ def plot_mapa_departamentos(df, indicador="TD", title="", geo_sel="Todos"):
                 locations=sel_row["_geo_name"],
                 z=sel_row[indicador],
                 featureidkey="properties.NOMBRE_DPT",
-                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
-                marker_opacity=0,
-                marker_line_width=4,
-                marker_line_color=BT_NAVY,
+                colorscale=[[0, "rgba(224,90,42,0.20)"], [1, "rgba(224,90,42,0.20)"]],
+                marker_opacity=1,
+                marker_line_width=3,
+                marker_line_color="#E05A2A",
                 showscale=False,
                 hoverinfo="skip",
             ))
@@ -166,7 +166,34 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD", geo_sel: st
     label = MAP_INDICATORS.get(indicador, {}).get("label", indicador)
     vmin, vmax = data[indicador].min(), data[indicador].max()
 
-    fig = go.Figure(go.Scattermapbox(
+    # ciudad_sel solo es True si geo_sel existe en las ciudades del dataset
+    ciudad_sel = (
+        geo_sel not in ("Todos", "Todas", "", None)
+        and geo_sel in data["AREA_label"].values
+    )
+    sel_row = data[data["AREA_label"] == geo_sel] if ciudad_sel else pd.DataFrame()
+
+    traces = []
+
+    # Anillo de la ciudad seleccionada en naranja/ámbar para contrastar con el colorscale azul
+    _CITY_RING = "#E05A2A"
+    if not sel_row.empty:
+        base_size = float(18 + (sel_row[indicador].iloc[0] - vmin) / (vmax - vmin + 1e-9) * 26)
+        traces.append(go.Scattermapbox(
+            lat=sel_row["lat"], lon=sel_row["lon"],
+            mode="markers",
+            marker=go.scattermapbox.Marker(
+                size=base_size + 14,
+                color=_CITY_RING,
+                opacity=1,
+                sizemode="diameter",
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+
+    # Todas las ciudades con colorscale (siempre visibles)
+    traces.append(go.Scattermapbox(
         lat=data["lat"], lon=data["lon"],
         mode="markers",
         marker=go.scattermapbox.Marker(
@@ -187,27 +214,19 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD", geo_sel: st
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
 
-    # Highlight de la ciudad seleccionada: anillo exterior + etiqueta
-    if geo_sel not in ("Todos", "Todas", "", None):
-        sel_row = data[data["AREA_label"] == geo_sel]
-        if not sel_row.empty:
-            base_size = float(18 + (sel_row[indicador].iloc[0] - vmin) / (vmax - vmin + 1e-9) * 26)
-            fig.add_trace(go.Scattermapbox(
-                lat=sel_row["lat"], lon=sel_row["lon"],
-                mode="markers+text",
-                marker=go.scattermapbox.Marker(
-                    size=base_size + 14,
-                    color="rgba(0,0,0,0)",
-                    opacity=1,
-                ),
-                marker_line_width=3,
-                marker_line_color=BT_NAVY,
-                text=sel_row["AREA_label"],
-                textposition="top right",
-                textfont=dict(size=12, color=BT_NAVY, weight=700),
-                hoverinfo="skip",
-                showlegend=False,
-            ))
+    # Etiqueta de la ciudad seleccionada
+    if not sel_row.empty:
+        traces.append(go.Scattermapbox(
+            lat=sel_row["lat"], lon=sel_row["lon"],
+            mode="text",
+            text=sel_row["AREA_label"],
+            textposition="top right",
+            textfont=dict(size=12, color=_CITY_RING, weight=700),
+            hoverinfo="skip",
+            showlegend=False,
+        ))
+
+    fig = go.Figure(data=traces)
 
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
@@ -1500,8 +1519,9 @@ def render_map_module(df_dep: pd.DataFrame, default_indicator: str,
 
     meta = MAP_INDICATORS[indicador]
     with map_col:
+        plot_title = f"{title_prefix}: {meta['short']}" if title_prefix else meta['label']
         st.markdown(
-            f"<div class='map-plot-title'>{title_prefix}: {meta['short']}</div>",
+            f"<div class='map-plot-title'>{plot_title}</div>",
             unsafe_allow_html=True,
         )
         st.plotly_chart(
@@ -1636,7 +1656,7 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
 # ---------------------------------------------------------------------------
 # Vista 1: Resumen ejecutivo
 # ---------------------------------------------------------------------------
-def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
+def view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label,
                  df_tendencia=None, ano_ui="Todos", mes_ui="Todos"):
     t = ACTIVE_THEME
     row = latest_row(df_context)
@@ -1753,7 +1773,7 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
         render_map_module(df_dep_mapa, "TD", "resumen", "", geo_sel=geo_sel)
 
     # Mapa de ciudades (independiente del mapa departamental)
-    if not df_city.empty and "AREA_label" in df_city.columns:
+    if not df_city_mapa.empty and "AREA_label" in df_city_mapa.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         render_section("Mapa de ciudades", "Indicadores por área metropolitana · último periodo")
         city_map_col, city_ctrl_col = st.columns([4.05, 1.35], gap="medium")
@@ -1775,7 +1795,7 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
                     label_visibility="collapsed",
                 )
                 city_vals = (
-                    df_city.sort_values("periodo")
+                    df_city_mapa.sort_values("periodo")
                     .groupby("AREA_label", as_index=False)[city_ind]
                     .last()
                     .dropna(subset=[city_ind])
@@ -1795,7 +1815,7 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
                         )
         with city_map_col:
             st.plotly_chart(
-                plot_mapa_ciudades(df_city, city_ind, geo_sel=geo_sel),
+                plot_mapa_ciudades(df_city_mapa, city_ind, geo_sel=geo_sel),
                 use_container_width=True,
                 config={"displayModeBar": False},
             )
@@ -2828,6 +2848,7 @@ df_nac         = filtrar(df_all, "nacional",            anos_sel, meses_sel, geo
 df_dep         = filtrar(df_all, "departamento",        anos_sel, meses_sel, geo_level, geo_sel)
 df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, meses_sel, "Sin filtro", "Todas")
 df_city        = filtrar(df_all, "ciudad",              anos_sel, meses_sel, geo_level, geo_sel)
+df_city_mapa   = filtrar(df_all, "ciudad",              anos_sel, meses_sel, "Sin filtro", "Todas")
 
 if "FFT_exp" in df_dep_mapa.columns and "PET_exp" in df_dep_mapa.columns:
     df_dep_mapa = df_dep_mapa.copy()
@@ -2884,7 +2905,7 @@ with body_slot:
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
-        view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label, df_tendencia, ano_ui, mes_ui)
+        view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label, df_tendencia, ano_ui, mes_ui)
     elif vista == "poblacion":
         view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel)
     elif vista == "ocupados":
