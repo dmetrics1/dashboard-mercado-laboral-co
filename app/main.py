@@ -1594,7 +1594,8 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
 # ---------------------------------------------------------------------------
 # Vista 1: Resumen ejecutivo
 # ---------------------------------------------------------------------------
-def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label):
+def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
+                 df_tendencia=None, ano_ui="Todos", mes_ui="Todos"):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1631,11 +1632,14 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label):
 
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
 
-    # Tendencia principal a ancho completo (las mini-cards laterales duplicaban KPIs)
+    # Tendencia principal a ancho completo
     render_section("Tendencia de indicadores laborales", "Serie mensual — TD, TO y TGP ponderados con FEX_C18")
-    trend = df_context.sort_values("periodo")
-    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
+    # La serie de fondo usa todos los meses del año seleccionado (sin filtro de mes)
+    _base_trend = df_tendencia if df_tendencia is not None and not df_tendencia.empty else df_context
+    trend = _base_trend.sort_values("periodo")
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
     color_map = {"TD": BT_NAVY, "TO": BT_BLUE, "TGP": BT_MINT}
 
     for ind in ["TGP", "TO"]:
@@ -1656,14 +1660,44 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label):
         hovertemplate="<b>TD</b>: %{y:.1f}%<br>%{x|%b %Y}<extra></extra>"
     ), secondary_y=True)
 
-    fig = fig_base(fig, "Dinámica laboral mensual", f"Doble eje · contexto: {context_label}")
+    # Marcador del mes seleccionado encima de la línea
+    if mes_ui != "Todos":
+        mes_num = MESES_INVERSO.get(mes_ui)
+        trend_mes = trend[trend["mes"] == mes_num] if "mes" in trend.columns else pd.DataFrame()
+        if not trend_mes.empty:
+            for ind, secondary in [("TGP", False), ("TO", False), ("TD", True)]:
+                fig.add_trace(go.Scatter(
+                    x=trend_mes["periodo"], y=trend_mes[ind],
+                    name=f"{mes_ui} seleccionado",
+                    mode="markers+text",
+                    marker=dict(
+                        color=color_map[ind], size=13, symbol="circle",
+                        line=dict(width=2.5, color=t["panel_bg"])
+                    ),
+                    text=[f"<b>{v:.1f}%</b>" for v in trend_mes[ind]],
+                    textposition="top center",
+                    textfont=dict(size=10, color=color_map[ind]),
+                    showlegend=(ind == "TD"),
+                    legendgroup="mes_sel",
+                    hovertemplate=f"<b>{ind} — {mes_ui}</b>: %{{y:.1f}}%<br>%{{x|%b %Y}}<extra></extra>",
+                ), secondary_y=secondary)
+
+    subtitulo_trend = f"Doble eje · contexto: {context_label}"
+    if ano_ui != "Todos":
+        subtitulo_trend += f" · {ano_ui}"
+    if mes_ui != "Todos":
+        subtitulo_trend += f" · {mes_ui} destacado"
+
+    fig = fig_base(fig, "Dinámica laboral mensual", subtitulo_trend)
     fig.update_yaxes(title_text="TO / TGP (%)", ticksuffix="%", secondary_y=False)
     fig.update_yaxes(
         title_text="TD (%)", ticksuffix="%", secondary_y=True, showgrid=False,
         tickfont=dict(color=t["soft_text"], size=11),
         title_font=dict(color=t["muted"], size=11),
     )
-    fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+    # Eje X: ticks mensuales cuando hay un año específico, trimestrales para la serie completa
+    dtick_x = "M1" if ano_ui != "Todos" else "M3"
+    fig.update_xaxes(tickformat="%b %Y", dtick=dtick_x)
     fig.update_layout(height=H_SINGLE)
     fig = add_eventos_geih(fig, t)
     st.plotly_chart(fig, use_container_width=True)
@@ -2789,6 +2823,14 @@ ultimo       = latest_row(df_nac)
 df_context   = active_context_df(df_nac, df_dep, df_city, geo_level, geo_sel)
 context_label = active_context_label(geo_level, geo_sel)
 
+# Serie de tendencia: siempre con todos los meses del año seleccionado,
+# nunca filtrada por mes (el mes solo añade un marcador encima)
+_meses_todos = sorted(df_all["mes"].dropna().unique().tolist())
+_df_nac_tr   = filtrar(df_all, "nacional",     anos_sel, _meses_todos, "Sin filtro", "Todas")
+_df_dep_tr   = filtrar(df_all, "departamento", anos_sel, _meses_todos, geo_level,    geo_sel)
+_df_city_tr  = filtrar(df_all, "ciudad",       anos_sel, _meses_todos, geo_level,    geo_sel)
+df_tendencia = active_context_df(_df_nac_tr, _df_dep_tr, _df_city_tr, geo_level, geo_sel)
+
 with title_slot:
     render_header(vista, ultimo["periodo"].strftime("%B %Y").capitalize(), context_label)
 
@@ -2798,7 +2840,7 @@ with body_slot:
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
-        view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label)
+        view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label, df_tendencia, ano_ui, mes_ui)
     elif vista == "poblacion":
         view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel)
     elif vista == "ocupados":
