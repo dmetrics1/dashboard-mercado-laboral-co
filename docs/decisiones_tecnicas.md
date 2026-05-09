@@ -1,6 +1,6 @@
 # Log de decisiones tecnicas
 
-Ultima revision: 2026-05-09 (cuarta actualizacion).
+Ultima revision: 2026-05-09 (quinta actualizacion).
 
 ---
 
@@ -240,3 +240,47 @@ Ultima revision: 2026-05-09 (cuarta actualizacion).
 **Correccion de titulo del mapa departamental:**
 
 - Cuando `title_prefix` esta vacio, el subtitulo encima del mapa mostraba `": TO"`. Corregido: si `title_prefix` es vacio se muestra el nombre completo del indicador (`meta['label']`); si tiene valor se usa el formato `"Prefijo: SIGLA"` como antes.
+
+---
+
+## DT-018 - Graficos de tendencia y mapas de ciudades en vistas Ocupados y Desocupados (2026-05-09)
+
+**Decision:** agregar graficos de lineas interactivos y mapas de ciudades a las vistas Ocupados y Desocupados; corregir ejes en graficos de barras horizontales; bajar leyendas al pie de los graficos.
+
+**Grafico de tendencia en Ocupados:**
+
+- Doble eje: TO (%) en eje izquierdo azul + tasa de informalidad (%) en eje derecho teal con relleno.
+- Responde al filtro de ano (dtick M1) y mes (marcador puntual con valor encima de cada linea).
+- `df_tendencia` como serie de fondo; `df_context` como fallback si la tendencia no esta disponible.
+- Parametros `df_tendencia`, `ano_ui`, `mes_ui` agregados a la firma de `view_ocupados`.
+
+**Grafico de tendencia en Desocupados:**
+
+- Doble eje: Inactivos FFT en millones (eje izquierdo teal) + TD (%) en eje derecho navy con relleno.
+- No se usa tasa_inactividad (requiere PET_exp que no esta en df_tendencia); se usa FFT_exp / 1e6 directamente.
+- Mismo patron de marcador mensual y dtick adaptativo que en Ocupados y Resumen.
+- Parametros `df_tendencia`, `ano_ui`, `mes_ui`, `df_city_mapa` agregados a la firma de `view_desocupados`.
+- Grafico de barras "Poblacion inactiva (FFT)" eliminado (redundante con la nueva linea de tendencia).
+
+**Mapa de ciudades en Ocupados:**
+
+- Indicadores: TO e Informalidad. Panel Mayor/Menor. Resaltado naranja al seleccionar ciudad.
+- Usa `df_city_mapa` (sin filtro geo) para mostrar siempre todas las areas metropolitanas.
+
+**Mapa de ciudades en Desocupados:**
+
+- Indicadores: TD e Inactivos (FFT_exp). `FFT_exp` agregado a MAP_INDICATORS con `kind="count"`.
+- Desocupados expandidos (`desocupados_exp`) eliminado del selector: indicadores mas relevantes son TD e Inactivos.
+
+**Mapa departamental en Poblacion:**
+
+- `render_map_module` reemplazado por `plot_mapa_departamentos` directo con `poblacion_total_exp`.
+- Sin panel de selector; mapa a ancho completo mostrando la distribucion poblacional por departamento.
+
+**Correccion de graficos de barras horizontales (todas las vistas):**
+
+- Titulos de ejes Y eliminados (las categorias son autoexplicativas).
+- Titulos de ejes X cambiados a nombres descriptivos: "Personas ocupadas", "Tasa de informalidad (%)", "Ingreso mediano (COP)", "Diferencia (pp)", etc.
+- Subtitulos de `fig_base_h` sin referencias a variables internas (P3042, P6430, RAMA2D_R4).
+- Margen derecho subido a 90 px en todos los graficos horizontales para evitar recorte del texto de valor en barras largas.
+- Leyenda de piramide poblacional bajada de `y=1.08` a `y=-0.12` para evitar solapamiento con titulos vecinos.

@@ -22,10 +22,10 @@
 
 | Vista | Contenido |
 |---|---|
-| **Resumen** | KPIs nacionales, tendencia TD/TO/TGP, mapa regional independiente de filtros |
-| **Población** | Pirámide poblacional (quinquenios), educación, estado civil, sexo, clase |
-| **Ocupados** | Rama de actividad, pirámide de ocupados, posición, ciudades, informalidad, salarios |
-| **Desocupados** | Perfil de desocupados por edad/sexo, ciudades, educación, tendencia FFT |
+| **Resumen** | KPIs nacionales, tendencia TD/TO/TGP, mapa departamental, mapa de ciudades |
+| **Población** | Pirámide poblacional, educación, estado civil, sexo, clase, mapa poblacional |
+| **Ocupados** | Tendencia TO/informalidad, rama, pirámide, posición, mapa departamental y de ciudades, salarios |
+| **Desocupados** | Tendencia TD/inactivos, perfil edad/sexo, educación, mapa departamental y de ciudades |
 | **Brechas** | Brecha de género, brecha etaria (15-28 vs 29+), mapa regional e indicadores |
 | **Instrucciones** | Guía de lectura para facultades y programas |
 | **Metodología** | Ficha técnica, definiciones, notas de cobertura |
