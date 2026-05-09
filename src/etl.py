@@ -44,11 +44,13 @@ DIMENSIONES: dict[str, list[str] | None] = {
     "dpto_estado_civil": ["DPTO_label", "P6070_label"],
     "dpto_sexo":         ["DPTO_label", "P3271_label"],
     "dpto_clase":        ["DPTO_label", "CLASE_label"],
+    "dpto_edad_brecha":  ["DPTO_label", "grupo_edad_brecha"],
     "ciudad_sexo_edad":    ["AREA_label", "P3271_label", "grupo_edad"],
     "ciudad_educacion":    ["AREA_label", "P3042_label"],
     "ciudad_estado_civil": ["AREA_label", "P6070_label"],
     "ciudad_sexo":         ["AREA_label", "P3271_label"],
     "ciudad_clase":        ["AREA_label", "CLASE_label"],
+    "ciudad_edad_brecha":  ["AREA_label", "grupo_edad_brecha"],
 }
 
 DATA_PROCESSED_DIR = config.DATA_PROCESSED_DIR
@@ -57,10 +59,7 @@ REPORTE_COBERTURA_PATH = config.REPORTE_COBERTURA_PATH
 
 
 def _resolver_anos() -> list[int]:
-    for value in config.__dict__.values():
-        if isinstance(value, list) and value == [2022, 2023, 2024, 2025]:
-            return value
-    raise AttributeError("No se pudo resolver la lista de anos en src.config")
+    return config.AÑOS
 
 
 def _resolver_columna_ano(columnas: list[str]) -> str:

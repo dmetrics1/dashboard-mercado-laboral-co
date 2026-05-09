@@ -322,6 +322,9 @@ BLUE_TEAL_DISCRETE = ["#1E2D55", "#27638A", "#338CA1", "#51A6AE", "#7BBDBF", "#A
 BT_NAVY, BT_DEEP, BT_BLUE, BT_TEAL, BT_MINT, BT_PALE, BT_ICE = BLUE_TEAL_DISCRETE
 SEX_COLORS = {"Hombre": BT_DEEP, "Mujer": BT_TEAL}
 
+# Salario Mínimo Mensual Legal Vigente (COP) — Decreto DANE cada enero
+SMMLV = {2022: 1_000_000, 2023: 1_160_000, 2024: 1_300_606, 2025: 1_423_500}
+
 MAP_INDICATORS = {
     "TD": {"label": "Tasa de desempleo (TD)", "select": "TD - Desempleo", "short": "TD", "suffix": "%", "kind": "pct"},
     "TO": {"label": "Tasa de ocupación (TO)", "select": "TO - Ocupación", "short": "TO", "suffix": "%", "kind": "pct"},
@@ -1664,7 +1667,7 @@ def plot_pyramid(df, value_col: str, title: str, subtitle: str = ""):
 # Vista 1: Resumen ejecutivo
 # ---------------------------------------------------------------------------
 def view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label,
-                 df_tendencia=None, ano_ui="Todos", mes_ui="Todos"):
+                 df_tendencia=None, ano_ui="Todos", mes_ui="Todos", geo_sel="Todas"):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -1770,6 +1773,36 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context
     fig.update_layout(height=H_SINGLE)
     fig = add_eventos_geih(fig, t)
     st.plotly_chart(fig, use_container_width=True)
+
+    # Comparación interanual — solo cuando hay más de un año seleccionado
+    if ano_ui == "Todos" and "ano" in _base_trend.columns and _base_trend["ano"].nunique() > 1:
+        st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+        render_section(
+            "Comparación interanual · TD",
+            "Tasa de desempleo mes a mes — cada línea es un año",
+        )
+        _tr_ia = _base_trend.copy()
+        _tr_ia["mes_nombre"] = pd.to_datetime(_tr_ia["periodo"]).dt.month.map(MESES_NOMBRE)
+        _tr_ia["año"] = _tr_ia["ano"].astype(str)
+        _tr_ia = _tr_ia.sort_values(["ano", "mes"])
+
+        year_colors = dict(zip(
+            sorted(_tr_ia["año"].unique()),
+            BLUE_TEAL_DISCRETE[:_tr_ia["año"].nunique()]
+        ))
+        fig_ia = px.line(
+            _tr_ia, x="mes_nombre", y="TD", color="año",
+            color_discrete_map=year_colors,
+            line_shape="spline",
+            category_orders={"mes_nombre": list(MESES_NOMBRE.values())},
+            labels={"TD": "TD (%)", "mes_nombre": "", "año": "Año"},
+        )
+        fig_ia = fig_base(fig_ia, "TD por mes — comparativo anual", "Permite ver estacionalidad y tendencia estructural")
+        fig_ia.update_traces(line=dict(width=2.5),
+                             hovertemplate="<b>%{fullData.name}</b><br>TD: %{y:.1f}%<br>%{x}<extra></extra>")
+        fig_ia.update_yaxes(ticksuffix="%")
+        fig_ia.update_layout(height=H_PAIRED)
+        st.plotly_chart(fig_ia, use_container_width=True)
 
     # Comparativo departamental: prioridad de política pública = mayor desempleo
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
@@ -2275,11 +2308,20 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             fig = px.bar(d2, x="ingreso_mediano", y="P3042_label", orientation="h", text="txt",
                          color_discrete_sequence=[BT_TEAL],
                          labels={"ingreso_mediano": "Ingreso mediano (COP)", "P3042_label": ""})
-            fig = fig_base_h(fig, "Ingreso mediano por nivel educativo", "COP corrientes · promedio del periodo")
+            fig = fig_base_h(fig, "Ingreso mediano por nivel educativo", "COP corrientes · promedio del periodo · línea = SMMLV")
             fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
             fig.update_xaxes(title_text="Ingreso mediano (COP)", tickprefix="$", separatethousands=True)
             fig.update_yaxes(title_text="")
             fig.update_layout(height=H_PAIRED, margin=dict(r=90))
+            # Línea SMMLV del año con más datos en el filtro
+            _smmlv_year = int(df_edu["ano"].mode()[0]) if "ano" in df_edu.columns else max(SMMLV)
+            _smmlv_val  = SMMLV.get(_smmlv_year, SMMLV[max(SMMLV)])
+            fig.add_vline(
+                x=_smmlv_val, line_dash="dash", line_color=BT_NAVY, line_width=1.8,
+                annotation_text=f"SMMLV {_smmlv_year}<br>${fmt_metric(_smmlv_val)}",
+                annotation_position="top right",
+                annotation_font=dict(size=10, color=BT_NAVY),
+            )
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
@@ -2358,7 +2400,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
 # Vista 4: Dinámica de desocupados
 # ---------------------------------------------------------------------------
 def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, context_label, geo_level,
-                     df_tendencia=None, ano_ui="Todos", mes_ui="Todos", df_city_mapa=None):
+                     df_tendencia=None, ano_ui="Todos", mes_ui="Todos", df_city_mapa=None, geo_sel="Todas"):
     t = ACTIVE_THEME
     row = latest_row(df_context)
     prev = prev_row(df_context)
@@ -2579,40 +2621,130 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
 # ---------------------------------------------------------------------------
 # Vista 5: Brechas y comparaciones
 # ---------------------------------------------------------------------------
-def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level):
+def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level, geo_sel="Todas"):
     t = ACTIVE_THEME
-    if geo_level != "Sin filtro":
-        st.markdown(
-            "<div class='placeholder-card' style='margin-bottom:0.7rem'>ℹ️ "
-            "Brecha de género y edad son nacionales en esta versión. "
-            "El filtro territorial ya impacta el comparativo departamental.</div>",
-            unsafe_allow_html=True,
-        )
+    _has_sex = not df_sexo.empty and "P3271_label" in df_sexo.columns
 
-    render_section("Brechas estructurales", "Diferencias por sexo y por cohorte de edad en la TD")
+    # ── A: KPI cards de brecha ────────────────────────────────────────────────
+    td_gap = to_gap = inf_gap = ing_gap = None
+    if _has_sex:
+        last_p = df_sexo["periodo"].max()
+        ult = df_sexo[df_sexo["periodo"] == last_p].groupby("P3271_label", as_index=False).mean(numeric_only=True)
+        hombre = ult[ult["P3271_label"] == "Hombre"]
+        mujer  = ult[ult["P3271_label"] == "Mujer"]
+        if not hombre.empty and not mujer.empty:
+            if "TD" in ult.columns:
+                td_gap  = float(mujer["TD"].values[0])  - float(hombre["TD"].values[0])
+            if "TO" in ult.columns:
+                to_gap  = float(mujer["TO"].values[0])  - float(hombre["TO"].values[0])
+            if "tasa_informalidad" in ult.columns:
+                inf_gap = float(mujer["tasa_informalidad"].values[0]) - float(hombre["tasa_informalidad"].values[0])
+            if "ingreso_mediano" in ult.columns:
+                im_h = float(hombre["ingreso_mediano"].values[0])
+                im_m = float(mujer["ingreso_mediano"].values[0])
+                if not pd.isna(im_h) and im_h > 0 and not pd.isna(im_m):
+                    ing_gap = (im_m - im_h) / im_h * 100
+
+    render_section("Brechas de género · Resumen", "Último período disponible · Mujer menos Hombre")
+    _v_td  = f"{td_gap:+.1f} pp"  if td_gap  is not None and not pd.isna(td_gap)  else "s/d"
+    _v_to  = f"{to_gap:+.1f} pp"  if to_gap  is not None and not pd.isna(to_gap)  else "s/d"
+    _v_inf = f"{inf_gap:+.1f} pp" if inf_gap is not None and not pd.isna(inf_gap) else "s/d"
+    _v_ing = f"{ing_gap:+.1f}%"   if ing_gap is not None and not pd.isna(ing_gap) else "s/d"
+    st.markdown(
+        f"""<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:0.5rem;'>
+  <div class='card' style='text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center; align-items:center;'>
+    <div class='kpi-label'>BRECHA TD (M−H)</div>
+    <div class='kpi-value'>{_v_td}</div>
+  </div>
+  <div class='card' style='text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center; align-items:center;'>
+    <div class='kpi-label'>BRECHA TO (M−H)</div>
+    <div class='kpi-value'>{_v_to}</div>
+  </div>
+  <div class='card' style='text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center; align-items:center;'>
+    <div class='kpi-label'>INFORMALIDAD (M−H)</div>
+    <div class='kpi-value'>{_v_inf}</div>
+  </div>
+  <div class='card' style='text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center; align-items:center;'>
+    <div class='kpi-label'>INGRESO MEDIANO (M−H)</div>
+    <div class='kpi-value'>{_v_ing}</div>
+  </div>
+</div>""",
+        unsafe_allow_html=True,
+    )
+
+    # ── Sección: Género — brecha absoluta e informalidad ──────────────────────
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    render_section("Brechas estructurales · Género", "Diferencias por sexo en TD e informalidad")
     left, right = st.columns(2, gap="large")
 
     with left:
-        if df_sexo.empty or "P3271_label" not in df_sexo.columns:
+        # B: Brecha absoluta TD (línea única Mujer − Hombre)
+        if not _has_sex or "TD" not in df_sexo.columns:
             placeholder("Sin datos de brecha de género.", "⚧")
         else:
-            serie = df_sexo.groupby(["periodo", "P3271_label"], as_index=False)["TD"].mean()
+            pivot = (
+                df_sexo.groupby(["periodo", "P3271_label"], as_index=False)["TD"].mean()
+                .pivot(index="periodo", columns="P3271_label", values="TD")
+                .reset_index()
+            )
+            if "Mujer" in pivot.columns and "Hombre" in pivot.columns:
+                pivot["brecha_td"] = pivot["Mujer"] - pivot["Hombre"]
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=pivot["periodo"], y=pivot["brecha_td"],
+                    name="Brecha TD (M−H)",
+                    fill="tozeroy",
+                    fillcolor=hex_to_rgba(BT_TEAL, 0.12),
+                    line=dict(color=BT_TEAL, width=2.5, shape="spline"),
+                    hovertemplate="<b>Brecha TD</b>: %{y:+.1f} pp<br>%{x|%b %Y}<extra></extra>",
+                ))
+                fig.add_hline(y=0, line_width=1.2, line_dash="dot", line_color=t["muted"])
+                fig = fig_base(fig, "Brecha TD: Mujer − Hombre", "Puntos porcentuales · tendencia mensual")
+                fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+                fig.update_yaxes(ticksuffix=" pp")
+                fig.update_layout(height=H_PAIRED, showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                placeholder("Sin datos suficientes de sexo.", "⚧")
+
+    with right:
+        # C: Informalidad por sexo (2 líneas)
+        if not _has_sex or "tasa_informalidad" not in df_sexo.columns:
+            placeholder("Sin datos de informalidad por sexo.", "⚧")
+        else:
+            serie_inf = df_sexo.groupby(["periodo", "P3271_label"], as_index=False)["tasa_informalidad"].mean()
             fig = px.line(
-                serie, x="periodo", y="TD", color="P3271_label",
+                serie_inf, x="periodo", y="tasa_informalidad", color="P3271_label",
                 color_discrete_map=SEX_COLORS,
                 line_shape="spline",
+                labels={"tasa_informalidad": "Informalidad (%)", "P3271_label": ""},
             )
-            fig = fig_base(fig, "Brecha de género en TD", "Serie mensual · Mujer vs. Hombre")
+            fig = fig_base(fig, "Informalidad por sexo", "Serie mensual · Mujer vs. Hombre")
             fig.update_traces(
                 line=dict(width=2.5),
-                hovertemplate="<b>%{fullData.name}</b><br>TD: %{y:.1f}%<br>%{x|%b %Y}<extra></extra>",
+                hovertemplate="<b>%{fullData.name}</b><br>Informalidad: %{y:.1f}%<br>%{x|%b %Y}<extra></extra>",
             )
             fig.update_xaxes(tickformat="%b %Y", dtick="M3")
             fig.update_yaxes(ticksuffix="%")
             fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
 
-    with right:
+    render_interpretation(
+        "La <b>brecha absoluta de TD</b> (valores positivos = mayor desempleo femenino) ha sido "
+        "persistente en todo el periodo: entre 3 y 5 puntos porcentuales adicionales para las mujeres. "
+        "La <b>informalidad femenina</b> supera también a la masculina, reflejo de la mayor participación "
+        "de mujeres en trabajo doméstico, cuenta propia y sectores de baja productividad. "
+        "Ambas brechas deben leerse junto con la TGP: parte de la ventaja masculina en TD se explica "
+        "por mayor desaliento y salida de la PEA entre mujeres.",
+        title="Lectura de brechas de género",
+    )
+
+    # ── Sección: Edad e Ingreso ───────────────────────────────────────────────
+    st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
+    render_section("Brechas estructurales · Edad e Ingreso", "TD juvenil vs. adulta e ingreso mediano por sexo")
+    left2, right2 = st.columns(2, gap="large")
+
+    with left2:
         if df_edad_brecha.empty or "grupo_edad_brecha" not in df_edad_brecha.columns:
             placeholder("Datos de brecha etaria no disponibles.<br>Requiere recodificación <code>15-28 vs 29+</code> en ETL.", "🧑‍🤝‍🧑")
         else:
@@ -2623,23 +2755,76 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                 text="txt",
                 color="grupo_edad_brecha",
                 color_discrete_sequence=[BT_BLUE, BT_MINT],
+                labels={"TD": "Tasa de desempleo (%)", "grupo_edad_brecha": ""},
             )
             fig = fig_base(fig, "Brecha etaria en TD", "Jóvenes 15-28 vs. Adultos 29+")
             fig.update_traces(textposition="outside", marker_line_width=0)
             fig.update_xaxes(title_text="")
-            fig.update_yaxes(ticksuffix="%")
-            fig.update_layout(showlegend=False)
-            fig.update_layout(height=H_PAIRED)
+            fig.update_yaxes(ticksuffix="%", title_text="Tasa de desempleo (%)")
+            fig.update_layout(showlegend=False, height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
-    
+
+    with right2:
+        # D: Ingreso mediano por sexo — serie temporal
+        if not _has_sex or "ingreso_mediano" not in df_sexo.columns:
+            placeholder("Sin datos de ingreso mediano por sexo.", "💰")
+        else:
+            serie_ing = (
+                df_sexo.groupby(["periodo", "P3271_label"], as_index=False)["ingreso_mediano"]
+                .mean()
+                .dropna(subset=["ingreso_mediano"])
+            )
+            if serie_ing.empty:
+                placeholder("Sin datos de ingreso mediano.", "💰")
+            else:
+                # gap % en el último período para el subtítulo
+                last_p2 = serie_ing["periodo"].max()
+                ult_ing = serie_ing[serie_ing["periodo"] == last_p2]
+                gap_subtitle = ""
+                _im_m = ult_ing[ult_ing["P3271_label"] == "Mujer"]["ingreso_mediano"].values
+                _im_h = ult_ing[ult_ing["P3271_label"] == "Hombre"]["ingreso_mediano"].values
+                if len(_im_m) > 0 and len(_im_h) > 0 and _im_h[0] > 0:
+                    _gp = (_im_m[0] - _im_h[0]) / _im_h[0] * 100
+                    gap_subtitle = f" · brecha actual: {_gp:+.1f}%"
+                fig = px.line(
+                    serie_ing, x="periodo", y="ingreso_mediano", color="P3271_label",
+                    color_discrete_map=SEX_COLORS,
+                    line_shape="spline",
+                    labels={"ingreso_mediano": "Ingreso mediano (COP)", "P3271_label": ""},
+                )
+                fig = fig_base(fig, "Ingreso mediano por sexo", f"Serie mensual · Mujer vs. Hombre{gap_subtitle} · línea = SMMLV")
+                fig.update_traces(
+                    line=dict(width=2.5),
+                    hovertemplate="<b>%{fullData.name}</b><br>Ingreso mediano: $%{y:,.0f}<br>%{x|%b %Y}<extra></extra>",
+                )
+                fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+                fig.update_yaxes(tickprefix="$")
+                fig.update_layout(height=H_PAIRED)
+                # Línea SMMLV escalonada (sube cada enero)
+                _periodos_smmlv = pd.date_range(
+                    serie_ing["periodo"].min(), serie_ing["periodo"].max(), freq="MS"
+                )
+                _smmlv_series = [SMMLV.get(p.year, SMMLV[max(SMMLV)]) for p in _periodos_smmlv]
+                fig.add_trace(go.Scatter(
+                    x=_periodos_smmlv, y=_smmlv_series,
+                    name="SMMLV", mode="lines",
+                    line=dict(color=BT_NAVY, width=1.5, dash="dot"),
+                    hovertemplate="<b>SMMLV %{x|%Y}</b>: $%{y:,.0f}<extra></extra>",
+                ))
+                st.plotly_chart(fig, use_container_width=True)
+
     render_interpretation(
-        "La <b>TD femenina</b> es sistemáticamente superior a la masculina en todo el periodo: la diferencia "
-        "promedia entre 3 y 5 puntos porcentuales. La <b>brecha etaria</b> es aún más severa: la TD juvenil "
-        "(15-28) duplica con frecuencia a la de los mayores de 29, evidenciando barreras de entrada al primer "
-        "empleo formal. Ambas brechas deben leerse junto con la TGP, no aisladas de la inactividad por desaliento.",
-        title="Lectura de brechas",
+        "La <b>brecha etaria</b> muestra que los jóvenes de 15-28 años duplican con frecuencia "
+        "la tasa de desempleo de los adultos de 29 años o más, evidenciando barreras de entrada al primer "
+        "empleo formal. La <b>serie de ingreso mediano por sexo</b> expone la brecha salarial en su "
+        "evolución: las mujeres reciben sistemáticamente menos que los hombres en todo el período "
+        "analizado, y la distancia absoluta tiende a ampliarse en meses de crecimiento económico "
+        "porque los sectores que más crecen son predominantemente masculinos (construcción, manufactura). "
+        "Ambas brechas son estructurales y cambian muy lentamente.",
+        title="Lectura de edad e ingreso",
     )
 
+    # ── Sección: Comparativa regional ─────────────────────────────────────────
     st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
     render_section("Comparativa regional", "TD departamental vs. promedio nacional · último período")
     if df_dep.empty or "DPTO_label" not in df_dep.columns:
@@ -2699,188 +2884,294 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
 # ---------------------------------------------------------------------------
 def view_instrucciones(df_nac=None, df_dep=None):
     t = ACTIVE_THEME
+    _render_guide_doc(t)
 
-    st.markdown(
-        f"""
-        <div style="margin-bottom:1.1rem">
-          <div class="topbar-title" style="font-size:1.85rem; margin-bottom:0.35rem;">
-            Cómo leer este tablero
-          </div>
-          <div class="topbar-sub" style="max-width:62rem;">
-            Una guía corta para que cualquier lector — facultad, decanatura, periodista económico
-            o analista de política — extraiga decisiones útiles en menos de cinco minutos.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    # Bloque 1: filtros y mapa de vistas
-    render_section("1 · Filtros y vistas", "Cómo orientarte en el dashboard")
-    c1, c2 = st.columns(2, gap="large")
-    with c1:
-        st.markdown(
-            f"""
-            <div class='mini-card'>
-              <div class='mini-label' style='color:{BT_DEEP}'>Filtros globales</div>
-              <ul style='color:{t["soft_text"]}; line-height:1.6; margin:0.4rem 0 0 1rem; padding:0;'>
-                <li><b>Periodo:</b> selecciona el año o "Todos" para ver la serie completa.</li>
-                <li><b>Nivel territorial:</b> elige Departamento o Ciudad para enfocar el contexto.</li>
-                <li><b>Ubicación:</b> aparece según el nivel anterior (32 dptos. o 23 áreas metropolitanas).</li>
-              </ul>
-              <div class='mini-foot' style='margin-top:0.55rem'>
-                Las vistas <b>Guía Usuario</b> y <b>Metodología</b> no usan filtros: son material de referencia.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with c2:
-        st.markdown(
-            f"""
-            <div class='mini-card'>
-              <div class='mini-label' style='color:{BT_DEEP}'>Las 5 vistas analíticas</div>
-              <ul style='color:{t["soft_text"]}; line-height:1.6; margin:0.4rem 0 0 1rem; padding:0;'>
-                <li><b>Resumen:</b> KPIs nacionales, tendencia mensual y mapa territorial.</li>
-                <li><b>Población:</b> pirámide, educación, estado civil, urbano/rural.</li>
-                <li><b>Ocupados:</b> sectores, informalidad, ciudades e ingreso por educación.</li>
-                <li><b>Desocupados:</b> perfil del desempleo por sexo, edad, ciudad y nivel educativo.</li>
-                <li><b>Brechas:</b> género, edad 15-28 vs 29+, comparativa departamental vs. nacional.</li>
-              </ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
+def _render_guide_doc(t):
+    """Renderiza la guía de usuario como documento HTML único y fluido."""
+
+    TX  = t["text"]
+    SF  = t["soft_text"]
+    MU  = t["muted"]
+    LN  = t["line"]
+    PB  = t["panel_bg"]
+    IB  = t["input_bg"]
+
+    # ── helpers ───────────────────────────────────────────────────────────────
+    def h2(txt):
+        return (
+            f"<h2 style='font-family:\"Fraunces\",Georgia,serif;font-size:1.32rem;"
+            f"font-weight:700;color:{BT_DEEP};margin:2.4rem 0 0.7rem;padding-bottom:0.4rem;"
+            f"border-bottom:2px solid {LN};'>{txt}</h2>"
         )
 
-    # Bloque 2: glosario rápido de indicadores
-    render_section("2 · Indicadores en 30 segundos", "Definiciones operativas DANE / OIT")
-    g1, g2, g3 = st.columns(3, gap="medium")
-    glossary = [
-        (g1, "TD", "Tasa de desempleo", "Desocupados ÷ PEA × 100", "Mide cuántos de los que buscan trabajo no lo encuentran."),
-        (g2, "TO", "Tasa de ocupación", "Ocupados ÷ PET × 100", "Qué proporción de la población en edad de trabajar tiene empleo."),
-        (g3, "TGP", "Tasa global de participación", "Fuerza de trabajo ÷ PET × 100", "Cuántas personas en edad de trabajar están activas (trabajando o buscando)."),
-    ]
-    for col, code, name, formula, desc in glossary:
-        with col:
-            st.markdown(
-                f"""
-                <div class='mini-card'>
-                  <div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.35rem;'>
-                    <div class='display-serif' style='font-size:1.7rem; font-weight:700; color:{BT_DEEP};'>{code}</div>
-                    <div style='color:{t["text"]}; font-weight:700; font-size:0.95rem;'>{name}</div>
-                  </div>
-                  <code style='background:{t["input_bg"]}; padding:0.2rem 0.45rem; border-radius:5px; font-size:0.8rem; color:{t["text"]}'>{formula}</code>
-                  <div class='mini-foot' style='margin-top:0.55rem;'>{desc}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    def h3(txt, color=None):
+        c = color or TX
+        return (
+            f"<h3 style='font-size:0.97rem;font-weight:700;color:{c};"
+            f"margin:1.4rem 0 0.2rem;'>{txt}</h3>"
+        )
 
-    g4, g5, g6 = st.columns(3, gap="medium")
-    glossary2 = [
-        (g4, "Informalidad", "Tasa de informalidad", "Informales ÷ Ocupados × 100", "Trabajadores sin afiliación al sistema contributivo (regla DANE 2022)."),
-        (g5, "Ingreso mediano", "Mediana ponderada", "P6500 entre ocupados", "El valor del trabajador del medio: más robusto que el promedio."),
-        (g6, "FEX_C18", "Factor de expansión", "Peso muestral", "Convierte cada encuestado en miles de personas representadas."),
-    ]
-    for col, code, name, formula, desc in glossary2:
-        with col:
-            st.markdown(
-                f"""
-                <div class='mini-card'>
-                  <div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.35rem;'>
-                    <div class='display-serif' style='font-size:1.4rem; font-weight:700; color:{BT_DEEP};'>{code}</div>
-                  </div>
-                  <div style='color:{t["text"]}; font-weight:700; font-size:0.92rem; margin-bottom:0.3rem;'>{name}</div>
-                  <code style='background:{t["input_bg"]}; padding:0.2rem 0.45rem; border-radius:5px; font-size:0.8rem; color:{t["text"]}'>{formula}</code>
-                  <div class='mini-foot' style='margin-top:0.55rem;'>{desc}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    def pill(txt, color):
+        return (
+            f"<code style='background:{color}18;color:{color};border:1px solid {color}44;"
+            f"padding:0.1rem 0.45rem;border-radius:4px;font-size:0.78rem;"
+            f"font-family:monospace;'>{txt}</code>"
+        )
 
-    # Bloque 3: rutas de lectura por perfil
-    render_section("3 · Rutas de lectura por perfil", "Por dónde empezar según tu rol")
+    def ind_block(code, name, formula, color, qm, ref, comb, trap):
+        row = (
+            f"<tr style='border-top:1px solid {LN};'>"
+            f"<td style='width:22%;font-weight:600;color:{TX};vertical-align:top;"
+            f"padding:0.3rem 0.7rem 0.3rem 0;font-size:0.86rem;white-space:nowrap;'>{{lbl}}</td>"
+            f"<td style='color:{SF};padding:0.3rem 0;font-size:0.86rem;line-height:1.55;'>{{val}}</td></tr>"
+        )
+        rows = (
+            row.format(lbl="Qué mide", val=qm)
+            + row.format(lbl="Referencia", val=ref)
+            + row.format(lbl="Combinar con", val=comb)
+            + row.format(lbl="⚠&nbsp;Trampa", val=f"<span style='color:{TX};'>{trap}</span>")
+        )
+        return (
+            f"<div style='border-left:4px solid {color};padding:0.75rem 1rem 0.75rem 1rem;"
+            f"margin-bottom:1.5rem;background:{PB};border-radius:0 8px 8px 0;"
+            f"border:1px solid {LN};border-left-width:4px;'>"
+            f"<div style='display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.5rem;flex-wrap:wrap;'>"
+            f"<span style='font-family:\"Fraunces\",Georgia,serif;font-size:1.45rem;"
+            f"font-weight:700;color:{color};line-height:1;'>{code}</span>"
+            f"<span style='font-weight:700;color:{TX};font-size:0.92rem;'>&mdash;&nbsp;{name}</span>"
+            f"<span style='margin-left:auto;'>{pill(formula, color)}</span>"
+            f"</div>"
+            f"<table style='width:100%;border-collapse:collapse;'>{rows}</table>"
+            f"</div>"
+        )
 
-    rutas = [
-        (
-            "Facultades técnicas e ingeniería",
-            "STEM, formación dual, oferta académica",
-            [
-                "<b>Ocupados → Estructura sectorial:</b> identifica si Información, Comunicaciones y Manufactura crecen o se contraen.",
-                "<b>Brechas → Brecha de género:</b> evalúa retención de mujeres en sectores intensivos en ingeniería.",
-                "<b>Ocupados → Educación e ingresos:</b> compara el retorno salarial del nivel universitario vs. técnico.",
-            ],
-        ),
-        (
-            "Ciencias sociales, salud y humanidades",
-            "Política pública, salud, derecho, economía",
-            [
-                "<b>Ocupados → Informalidad:</b> identifica los sectores donde la prestación de servicios sustituye al contrato laboral.",
-                "<b>Brechas → Comparativa regional:</b> mide la heterogeneidad territorial del mercado laboral.",
-                "<b>Desocupados → Educación:</b> mide la subutilización del capital humano universitario.",
-            ],
-        ),
-        (
-            "Decanaturas y dirección de programa",
-            "Diseño curricular, convenios, planeación",
-            [
-                "<b>Brechas → Brecha etaria 15-28 vs 29+:</b> sustenta convenios de Primer Empleo y prácticas tempranas.",
-                "<b>Desocupados → Pirámide:</b> distingue entre desempleo abierto e inactividad por desaliento (clave en mujeres jóvenes).",
-                "<b>Resumen → Mapa regional:</b> prioriza territorios para extensión universitaria.",
-            ],
-        ),
-        (
-            "Periodismo económico y consultoría",
-            "Notas, informes, asesoría a empresa o gobierno",
-            [
-                "<b>Resumen → Tendencia laboral:</b> identifica quiebres y comparaciones interanuales.",
-                "<b>Brechas → Mapa regional:</b> base territorial para reportajes con enfoque local.",
-                "<b>Metodología:</b> referencias técnicas para citar correctamente las cifras.",
-            ],
-        ),
-    ]
-    for i in range(0, len(rutas), 2):
-        cols = st.columns(2, gap="large")
-        for j, col in enumerate(cols):
-            if i + j >= len(rutas):
-                break
-            title, sub, items = rutas[i + j]
-            li_html = "".join(f"<li style='margin-bottom:0.4rem;'>{x}</li>" for x in items)
-            with col:
-                st.markdown(
-                    f"""
-                    <div class='mini-card' style='margin-bottom:0.85rem;'>
-                      <div style='display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.15rem;'>
-                        <div class='display-serif' style='font-size:1.2rem; font-weight:600; color:{t["text"]};'>{title}</div>
-                      </div>
-                      <div class='mini-foot' style='margin-top:0; margin-bottom:0.6rem;'>{sub}</div>
-                      <ul style='color:{t["soft_text"]}; line-height:1.55; margin:0 0 0 1rem; padding:0; font-size:0.92rem;'>
-                        {li_html}
-                      </ul>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+    def brecha_block(titulo, sub, items):
+        lis = "".join(
+            f"<li style='margin-bottom:0.42rem;color:{SF};font-size:0.88rem;'>{i}</li>"
+            for i in items
+        )
+        return (
+            f"{h3(titulo, BT_TEAL)}"
+            f"<p style='color:{MU};font-size:0.82rem;margin:0 0 0.35rem;'>{sub}</p>"
+            f"<ul style='margin:0 0 0.2rem 1.15rem;padding:0;line-height:1.65;'>{lis}</ul>"
+        )
 
-    # Bloque 4: tips de lectura
-    render_section("4 · Buenas prácticas al interpretar", "Reglas para no malinterpretar las cifras")
-    st.markdown(
-        f"""
-        <div class='interpretation-block'>
-          <div class='interpretation-title'>Cinco reglas básicas</div>
-          <div class='interpretation-text'>
-            <ol style='margin:0.4rem 0 0 1.1rem; padding:0; line-height:1.65;'>
-              <li><b>TD baja no es siempre buena:</b> puede caer porque la gente deja de buscar empleo (sale de la PEA), no porque encuentre trabajo. Léela junto a la TGP.</li>
-              <li><b>Los KPIs son del último mes disponible:</b> el delta vs. periodo anterior compara mes vs. mes inmediato.</li>
-              <li><b>El ingreso es mediano, no promedio:</b> la mediana es robusta a outliers (millonarios o salarios muy bajos no la sesgan).</li>
-              <li><b>Toda cifra está expandida:</b> son personas representadas, no encuestadas. El factor es <code>FEX_C18</code>.</li>
-              <li><b>Las brechas son persistentes:</b> género, edad y geografía cambian poco mes a mes. Si ves un quiebre brusco, sospecha del dato antes que del fenómeno.</li>
-            </ol>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    def ruta_block(titulo, sub, items):
+        lis = "".join(
+            f"<li style='margin-bottom:0.38rem;color:{SF};font-size:0.88rem;'>{i}</li>"
+            for i in items
+        )
+        return (
+            f"<div style='break-inside:avoid;margin-bottom:1.3rem;'>"
+            f"<div style='font-weight:700;color:{BT_DEEP};font-size:0.95rem;margin-bottom:0.05rem;'>{titulo}</div>"
+            f"<div style='color:{MU};font-size:0.82rem;margin-bottom:0.35rem;'>{sub}</div>"
+            f"<ul style='margin:0 0 0 1.1rem;padding:0;line-height:1.6;'>{lis}</ul>"
+            f"</div>"
+        )
+
+    # ── contenido ─────────────────────────────────────────────────────────────
+    header = (
+        f"<div style='margin-bottom:2rem;padding-bottom:1.1rem;border-bottom:3px solid {BT_DEEP};'>"
+        f"<div style='font-family:\"Fraunces\",Georgia,serif;font-size:2rem;font-weight:700;"
+        f"color:{BT_DEEP};margin-bottom:0.35rem;'>Cómo leer este tablero</div>"
+        f"<div style='color:{MU};font-size:0.97rem;max-width:680px;line-height:1.6;'>"
+        f"Guía completa de indicadores, brechas y navegación &mdash; para que cualquier lector "
+        f"extraiga conclusiones correctas en pocos minutos.</div>"
+        f"</div>"
     )
+
+    sec1 = (
+        h2("1 &middot; Navegación y filtros")
+        + f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:0.5rem;'>"
+        + f"<div>"
+        + f"<p style='font-weight:700;color:{BT_DEEP};font-size:0.85rem;letter-spacing:0.06em;"
+        f"text-transform:uppercase;margin:0 0 0.4rem;'>Filtros globales</p>"
+        + f"<ul style='margin:0 0 0 1.1rem;padding:0;color:{SF};line-height:1.7;font-size:0.9rem;'>"
+        + f"<li><b>Año:</b> 2022–2025 o &laquo;Todos&raquo; para la serie completa.</li>"
+        + f"<li><b>Mes:</b> fija un mes para ver el punto exacto; &laquo;Todos&raquo; para la tendencia anual.</li>"
+        + f"<li><b>Nivel territorial:</b> Sin filtro = nacional; Departamento o Ciudad para enfocar.</li>"
+        + f"<li><b>Ubicación:</b> aparece según el nivel — 32 departamentos o 23 áreas metropolitanas.</li>"
+        + f"</ul>"
+        + f"<p style='color:{MU};font-size:0.83rem;margin:0.5rem 0 0;'>Las vistas <b>Guía</b> y <b>Metodología</b> no usan filtros.</p>"
+        + f"</div>"
+        + f"<div>"
+        + f"<p style='font-weight:700;color:{BT_DEEP};font-size:0.85rem;letter-spacing:0.06em;"
+        f"text-transform:uppercase;margin:0 0 0.4rem;'>Las 5 vistas analíticas</p>"
+        + f"<ul style='margin:0 0 0 1.1rem;padding:0;color:{SF};line-height:1.7;font-size:0.9rem;'>"
+        + f"<li><b>Resumen:</b> KPIs nacionales, tendencia TD/TO/TGP y mapas territoriales.</li>"
+        + f"<li><b>Población:</b> pirámide por quinquenios, educación, estado civil, clase.</li>"
+        + f"<li><b>Ocupados:</b> sectores económicos, informalidad, ingreso mediano, mapa de ciudades.</li>"
+        + f"<li><b>Desocupados:</b> perfil por sexo, edad, educación, inactivos (FFT) y mapa de ciudades.</li>"
+        + f"<li><b>Brechas:</b> género (TD, TO, informalidad, ingreso), etaria 15-28 vs 29+ y comparativa departamental.</li>"
+        + f"</ul>"
+        + f"</div>"
+        + f"</div>"
+    )
+
+    sec2 = (
+        h2("2 &middot; Indicadores del mercado laboral")
+        + f"<p style='color:{SF};font-size:0.9rem;margin:0 0 1.1rem;line-height:1.6;'>"
+        f"Cada bloque muestra la fórmula, qué valor esperar en Colombia, con qué otro indicador "
+        f"combinarlo y cuál es el error de lectura más frecuente.</p>"
+        + ind_block("TD", "Tasa de Desempleo", "Desocupados ÷ PEA × 100", BT_NAVY,
+            "De cada 100 personas que buscan trabajo activamente, cuántas no lo encuentran.",
+            "Colombia oscila entre 9 % y 13 % según el ciclo. Por debajo del 8 %, tensión baja; por encima del 12 %, presión alta.",
+            "<b>TGP:</b> si la TD baja pero la TGP también cae, el desempleo mejora por desaliento, no por empleo real. Siempre léelas juntas.",
+            "TD baja &ne; mercado sano. Puede caer porque la gente dejó de buscar empleo (salió de la PEA).")
+        + ind_block("TO", "Tasa de Ocupación", "Ocupados ÷ PET × 100", BT_BLUE,
+            "De cada 100 personas en edad de trabajar (15 + años), cuántas tienen empleo.",
+            "Colombia se mueve entre 54 % y 60 %. TO alta indica que la economía absorbe fuerza laboral.",
+            "<b>TGP:</b> TO alta con TGP baja = todos los que participan trabajan, pero muchos están al margen. TO alta + TGP alta es el escenario más favorable.",
+            "TO alta incluye empleo informal, de subsistencia y trabajadores familiares sin pago. Empleo &ne; empleo de calidad.")
+        + ind_block("TGP", "Tasa Global de Participación", "(Ocupados + Desocupados) ÷ PET × 100", BT_TEAL,
+            "Qué proporción de la población en edad de trabajar está activa: trabajando o buscando empleo.",
+            "En Colombia ronda el 63–68 %. TGP baja puede reflejar desaliento, estudios prolongados o trabajo doméstico no remunerado.",
+            "<b>TD:</b> si la TGP sube y la TD también sube, más personas buscan trabajo. Si ambas caen, el mercado se 'limpia' por desaliento.",
+            "TGP baja en mujeres no significa que no trabajen. El trabajo del hogar no remunerado no se captura como ocupación.")
+        + ind_block("Informalidad", "Tasa de Informalidad", "Informales ÷ Ocupados × 100", BT_MINT,
+            "De cada 100 ocupados, cuántos trabajan sin afiliación al sistema de seguridad social contributivo (salud + pensión), según la definición DANE 2022.",
+            "Colombia supera el 55 %. En ciudades grandes puede bajar al 40 %; en zonas rurales y el Pacífico supera el 70 %.",
+            "<b>TO:</b> TO alta con informalidad alta = mucho empleo pero de baja calidad. <b>Rama económica:</b> comercio, agricultura y construcción concentran la mayor informalidad.",
+            "Informal &ne; ilegal ni pobreza absoluta. Hay cuenta propia con ingresos altos clasificados como informales si no cotizan a pensión.")
+        + ind_block("Ingreso mediano", "Ingreso Laboral Mediano", "Mediana ponderada de P6500 · entre ocupados", BT_DEEP,
+            "El ingreso del trabajador en el centro de la distribución: la mitad gana más y la mitad gana menos. En pesos colombianos (COP) corrientes.",
+            "El salario mínimo legal vigente es la referencia principal. Mediano cercano al mínimo indica predominio de empleo de baja remuneración.",
+            "<b>Nivel educativo</b> (vista Ocupados): retorno de cada nivel de formación. <b>Rama económica:</b> qué sectores pagan mejor.",
+            "La mediana puede enmascarar distribuciones bimodales: un mediano alto puede coexistir con muchos trabajadores de muy bajos ingresos.")
+        + ind_block("Inactivos (FFT)", "Fuera de la Fuerza de Trabajo", "Suma expandida · PET con FFT = 1", BT_PALE,
+            "Personas en edad de trabajar que ni trabajan ni buscan: estudiantes, personas dedicadas al hogar, pensionados o desalentados.",
+            "En Colombia los inactivos superan los 14 millones. Crecimiento de inactivos sin caída de desocupados = señal de desaliento.",
+            "<b>TGP:</b> si los inactivos crecen y la TGP cae, el mercado se contrae por el lado de la oferta, no por falta de empleo.",
+            "Los inactivos no son desempleados ocultos en todos los casos. Un pensionado o estudiante también es inactivo.")
+    )
+
+    sec3 = (
+        h2("3 &middot; Cómo leer la vista Brechas")
+        + f"<p style='color:{SF};font-size:0.9rem;margin:0 0 1rem;line-height:1.65;'>"
+        f"Una <b style='color:{TX};'>brecha laboral</b> es la diferencia sistemática en un indicador entre dos grupos — "
+        f"por sexo, por edad o por territorio. Este dashboard mide brechas en "
+        f"<b style='color:{TX};'>puntos porcentuales (pp)</b> para tasas (TD, TO, informalidad) y en "
+        f"<b style='color:{TX};'>porcentaje (%)</b> para el ingreso mediano. "
+        f"Las brechas son <b style='color:{TX};'>estructurales</b>: cambian muy lento; un quiebre brusco en un mes "
+        f"debe leerse con cautela antes de atribuirlo a un cambio real.</p>"
+        + brecha_block(
+            "KPIs de brecha de género",
+            "Fila de 4 tarjetas en la parte superior de la vista",
+            [
+                "<b>Brecha TD (M&minus;H): positivo (+)</b> = las mujeres tienen más desempleo. Valor típico en Colombia: entre +2 y +5 pp.",
+                "<b>Brecha TO (M&minus;H): negativo (&minus;)</b> es lo usual — las mujeres participan menos en el mercado. Un &minus;20 pp es habitual.",
+                "<b>Brecha Informalidad (M&minus;H): generalmente positiva</b> — las mujeres son más informales (trabajo doméstico, cuenta propia sin seguridad social).",
+                "<b>Brecha Ingreso (M&minus;H): generalmente negativa</b> — las mujeres ganan menos. Un &minus;15 % significa que el ingreso mediano femenino es 15 % inferior al masculino.",
+            ],
+        )
+        + brecha_block(
+            "Línea: Brecha TD Mujer &minus; Hombre",
+            "Gráfico de área con una sola línea — eje en puntos porcentuales",
+            [
+                "<b>Zona positiva (encima del 0):</b> las mujeres tienen mayor desempleo. Situación habitual en Colombia.",
+                "<b>Zona negativa (debajo del 0):</b> los hombres tienen más desempleo. Ocurre en crisis sectoriales que afectan más empleos masculinos (construcción, transporte).",
+                "<b>Tendencia creciente:</b> la brecha se amplía — el mercado se vuelve más desigual por género.",
+                "<b>Tendencia decreciente:</b> la brecha se cierra. No siempre es buena noticia: puede significar que los hombres están perdiendo empleos.",
+            ],
+        )
+        + brecha_block(
+            "Líneas: Informalidad por sexo",
+            "Mujer vs. Hombre · serie mensual",
+            [
+                "Muestra la evolución de la informalidad por separado para cada sexo.",
+                "<b>Línea Mujer arriba:</b> las mujeres concentran más trabajo informal. Habitual en Colombia, especialmente en comercio y trabajo doméstico.",
+                "<b>Convergencia de líneas:</b> la brecha de informalidad se cierra — señal de mejora en protección laboral femenina.",
+                "Combinar con <b>Ocupados &rarr; Sectores</b> para identificar en qué ramas la informalidad femenina es más aguda.",
+            ],
+        )
+        + brecha_block(
+            "Barras: Ingreso mediano por sexo",
+            "Último periodo disponible · Hombre vs. Mujer",
+            [
+                "Compara el ingreso mediano ponderado de hombres y mujeres en el último mes.",
+                "<b>Brecha en el subtítulo:</b> porcentaje de diferencia del ingreso femenino respecto al masculino. Negativo = mujeres ganan menos.",
+                "<b>Nota metodológica:</b> esta es la brecha bruta — no controla por horas, sector ni cargo. La brecha ajustada suele ser menor pero igualmente persistente.",
+                "Si las barras son similares pero la informalidad femenina es mayor, el ingreso mediano subestima la desventaja real.",
+            ],
+        )
+        + brecha_block(
+            "Barras: Brecha etaria en TD",
+            "Jóvenes 15-28 vs. Adultos 29+",
+            [
+                "Compara la tasa de desempleo promedio entre dos cohortes de edad.",
+                "<b>Ratio típico en Colombia:</b> la TD juvenil duplica o triplica la adulta. Un ratio de 2× señala barreras de entrada al primer empleo formal.",
+                "<b>Brecha alta:</b> indica rigidez en el mercado (contratos, experiencia requerida) que penaliza a los recién egresados.",
+                "Cruzar con <b>Desocupados &rarr; Educación</b>: universitarios desempleados y jóvenes = problema de inserción del talento calificado.",
+            ],
+        )
+        + brecha_block(
+            "Barras horizontales: Brecha departamental vs. nacional",
+            "TD de cada departamento menos el promedio nacional · en puntos porcentuales",
+            [
+                "<b>Barra a la derecha (positivo):</b> ese departamento tiene más desempleo que el promedio nacional.",
+                "<b>Barra a la izquierda (negativo):</b> ese departamento está por debajo del promedio.",
+                "<b>Línea punteada en 0:</b> es la referencia nacional. El subtítulo muestra el valor exacto.",
+                "Combinar con el mapa regional (debajo del gráfico) para identificar si las brechas siguen patrones geográficos.",
+            ],
+        )
+    )
+
+    rutas_html = (
+        ruta_block("Facultades técnicas e ingeniería", "STEM, formación dual, oferta académica", [
+            "<b>Ocupados &rarr; Sectores:</b> identifica si TIC, manufactura e ingeniería crecen o se contraen.",
+            "<b>Brechas &rarr; Informalidad por sexo:</b> evalúa si la brecha de género es mayor en tus sectores de egreso.",
+            "<b>Ocupados &rarr; Ingreso mediano:</b> compara el retorno del nivel técnico vs. universitario.",
+            "<b>Brechas &rarr; Ingreso mediano por sexo:</b> dimensiona la brecha salarial en el mercado al que envías egresadas.",
+        ])
+        + ruta_block("Ciencias sociales, salud y humanidades", "Política pública, salud, derecho, economía", [
+            "<b>Brechas &rarr; KPI brecha TD:</b> línea base para cualquier análisis de equidad de género.",
+            "<b>Brechas &rarr; Comparativa departamental:</b> heterogeneidad territorial — base para política focalizada.",
+            "<b>Desocupados &rarr; Educación:</b> cuantifica la subutilización del capital humano universitario.",
+            "<b>Ocupados &rarr; Informalidad:</b> identifica sectores donde la prestación de servicios reemplaza el contrato.",
+        ])
+        + ruta_block("Decanaturas y dirección de programa", "Diseño curricular, convenios, planeación", [
+            "<b>Brechas &rarr; Brecha etaria 15-28 vs 29+:</b> sustenta convenios de Primer Empleo y prácticas tempranas.",
+            "<b>Desocupados &rarr; Perfil por edad:</b> distingue desempleo abierto e inactividad por desaliento.",
+            "<b>Brechas &rarr; Ingreso mediano por sexo:</b> argumento para políticas de equidad salarial con empleadores.",
+            "<b>Resumen &rarr; Mapa regional:</b> prioriza territorios para extensión universitaria y alianzas.",
+        ])
+        + ruta_block("Periodismo económico y consultoría", "Notas, informes, asesoría a empresa o gobierno", [
+            "<b>Resumen &rarr; Tendencia TD/TO/TGP:</b> identifica quiebres de tendencia y comparaciones interanuales.",
+            "<b>Brechas &rarr; Línea brecha absoluta:</b> dato citable: &laquo;la mujer desemplea X pp más que el hombre&raquo;.",
+            "<b>Brechas &rarr; Mapa regional:</b> base territorial para reportajes con enfoque departamental.",
+            "<b>Metodología &rarr; Definiciones:</b> referencias técnicas para citar correctamente las cifras DANE.",
+        ])
+    )
+
+    sec4 = (
+        h2("4 &middot; Rutas de lectura por perfil")
+        + f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:0 2rem;'>"
+        + rutas_html
+        + f"</div>"
+    )
+
+    sec5 = (
+        h2("5 &middot; Reglas de interpretación")
+        + f"<p style='color:{SF};font-size:0.9rem;margin:0 0 0.8rem;'>Lo que <b>no</b> debes concluir de una sola cifra.</p>"
+        + f"<ol style='margin:0 0 0 1.2rem;padding:0;color:{SF};line-height:1.8;font-size:0.9rem;'>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>TD baja &ne; mercado sano.</b> Puede caer porque la gente dejó de buscar empleo (salió de la PEA). Léela siempre junto a la TGP.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>TO alta &ne; empleo de calidad.</b> Incluye trabajo informal, sin contrato y de subsistencia. Combina TO con informalidad para evaluar la calidad del empleo.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Las brechas son promedios grupales, no individuales.</b> Una brecha de +3.7 pp en TD no significa que cada mujer tenga ese desempleo adicional; es el diferencial del grupo.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Los KPIs muestran el último mes disponible.</b> El delta compara con el mes inmediatamente anterior, no con el mismo mes del año pasado.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Ingreso mediano &ne; ingreso promedio.</b> La mediana es robusta a extremos. Un mediano bajo puede coexistir con ingresos muy altos en sectores de élite.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Toda cifra está expandida con FEX_C18.</b> Son personas representadas, no encuestadas. No sumes valores de distintas tablas directamente sin considerar el factor de expansión.</li>"
+        + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Las brechas cambian muy lento.</b> Un quiebre brusco en un mes (brecha que salta 5 pp) debe sospecharse de variación muestral antes de atribuirlo a un fenómeno real.</li>"
+        + f"</ol>"
+    )
+
+    doc = (
+        f"<div style='max-width:900px;margin:0 auto;padding:0.25rem 0.5rem 3rem;"
+        f"font-size:0.94rem;color:{TX};line-height:1.72;'>"
+        + header + sec1 + sec2 + sec3 + sec4 + sec5
+        + "</div>"
+    )
+    st.markdown(doc, unsafe_allow_html=True)
 
 
 def view_metodologia(df):
@@ -2888,43 +3179,151 @@ def view_metodologia(df):
     years = sorted(df["ano"].dropna().unique().tolist()) if "ano" in df.columns else []
     year_range = f"{years[0]}–{years[-1]}" if len(years) >= 2 else (str(years[0]) if years else "s/d")
 
-    st.markdown(
-        f"""
-        <div style="margin-bottom:1.1rem">
-          <div class="topbar-title" style="font-size:1.85rem; margin-bottom:0.35rem;">
-            Ficha técnica
-          </div>
-          <div class="topbar-sub" style="max-width:62rem;">
-            Procesamiento de microdatos de la Gran Encuesta Integrada de Hogares (GEIH) rediseñada
-            del DANE para el período <b>{year_range}</b>. Toda cifra de este dashboard es trazable
-            hasta el código de variable original.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    TX = t["text"]; SF = t["soft_text"]; MU = t["muted"]
+    LN = t["line"]; PB = t["panel_bg"]; IB = t["input_bg"]
+
+    def h2(txt):
+        return (
+            f"<h2 style='font-family:Fraunces,serif; font-size:1.25rem; font-weight:700; "
+            f"color:{BT_DEEP}; margin:2rem 0 0.6rem; padding-bottom:0.35rem; "
+            f"border-bottom:2px solid {LN};'>{txt}</h2>"
+        )
+
+    def param_card(label, val, foot):
+        return (
+            f"<div style='background:{IB}; border:1px solid {LN}; border-radius:10px; "
+            f"padding:1rem 1.1rem; display:flex; flex-direction:column; gap:0.25rem;'>"
+            f"<div style='font-size:0.72rem; font-weight:700; letter-spacing:.06em; "
+            f"text-transform:uppercase; color:{MU};'>{label}</div>"
+            f"<div style='font-family:Fraunces,serif; font-size:1.4rem; font-weight:700; "
+            f"color:{BT_DEEP};'>{val}</div>"
+            f"<div style='font-size:0.82rem; color:{SF}; line-height:1.45;'>{foot}</div>"
+            f"</div>"
+        )
+
+    def def_block(code, name, desc, color=BT_DEEP):
+        return (
+            f"<div style='border-left:4px solid {color}; padding:0.65rem 0.9rem; "
+            f"background:{IB}; border-radius:0 8px 8px 0; margin-bottom:0.55rem;'>"
+            f"<div style='display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.2rem;'>"
+            f"<span style='font-family:Fraunces,serif; font-size:1.15rem; font-weight:700; "
+            f"color:{color};'>{code}</span>"
+            f"<span style='font-size:0.9rem; font-weight:700; color:{TX};'>{name}</span>"
+            f"</div>"
+            f"<div style='font-size:0.86rem; color:{SF}; line-height:1.5;'>{desc}</div>"
+            f"</div>"
+        )
+
+    def tr(ind, vars_, calc, last=False):
+        border = "" if last else f"border-bottom:1px solid {LN};"
+        return (
+            f"<tr style='{border}'>"
+            f"<td style='padding:0.45rem 0.65rem; font-weight:700; color:{TX}; white-space:nowrap;'>{ind}</td>"
+            f"<td style='padding:0.45rem 0.65rem; font-family:monospace; font-size:0.83rem; color:{BT_TEAL};'>{vars_}</td>"
+            f"<td style='padding:0.45rem 0.65rem; color:{SF}; font-size:0.86rem;'>{calc}</td>"
+            f"</tr>"
+        )
+
+    def note_li(txt):
+        return f"<li style='margin-bottom:0.45rem; line-height:1.6;'>{txt}</li>"
+
+    # ── Encabezado ────────────────────────────────────────────────────────────
+    header = (
+        f"<div style='border-bottom:3px solid {BT_DEEP}; padding-bottom:1rem; margin-bottom:0.25rem;'>"
+        f"<div style='font-family:Fraunces,serif; font-size:2rem; font-weight:800; color:{BT_DEEP}; "
+        f"line-height:1.15; margin-bottom:0.4rem;'>Ficha técnica · Metodología</div>"
+        f"<div style='font-size:0.97rem; color:{SF}; max-width:72ch; line-height:1.6;'>"
+        f"Procesamiento de microdatos de la <b>Gran Encuesta Integrada de Hogares (GEIH)</b> "
+        f"rediseñada del DANE para el período <b>{year_range}</b>. "
+        f"Toda cifra de este dashboard es trazable hasta el código de variable original.</div>"
+        f"</div>"
     )
 
-    # Bloque 1: parámetros técnicos
-    render_section("Parámetros estadísticos", "Lo que necesitas saber antes de citar")
-    c1, c2, c3, c4 = st.columns(4, gap="small")
-    for col, label, val, foot in [
-        (c1, "Fuente", "DANE GEIH", "Encuesta rediseñada (2022). Bases anuales consolidadas."),
-        (c2, "Marco muestral", "Probabilístico", "Multietápico, estratificado, por conglomerados. 23 áreas metropolitanas."),
-        (c3, "Precisión", "CV < 5%", "Indicadores publicados solo para niveles con suficiencia muestral."),
-        (c4, "Expansión", "FEX_C18", "Factor post-rediseño 2022. Toda cifra está expandida a personas."),
-    ]:
-        with col:
-            st.markdown(
-                f"<div class='card'>"
-                f"<div class='kpi-label'>{label}</div>"
-                f"<div class='mini-value' style='font-size:1.3rem'>{val}</div>"
-                f"<div class='kpi-foot'>{foot}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
+    # ── Sección 1: Parámetros ─────────────────────────────────────────────────
+    params_grid = (
+        f"<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:0.5rem;'>"
+        + param_card("Fuente", "DANE GEIH", "Encuesta rediseñada (2022). Bases anuales consolidadas.")
+        + param_card("Marco muestral", "Probabilístico", "Multietápico, estratificado, por conglomerados. 23 áreas metropolitanas.")
+        + param_card("Precisión", "CV &lt; 5%", "Indicadores publicados solo para niveles con suficiencia muestral.")
+        + param_card("Expansión", "FEX_C18", "Factor post-rediseño 2022. Toda cifra está expandida a personas.")
+        + "</div>"
+    )
+    sec1 = h2("1 · Parámetros estadísticos") + params_grid
 
-    # Bloque 2: cobertura del dataset (un solo gráfico, ya no dos)
-    render_section("Cobertura procesada", f"Registros agregados por dimensión analítica · {year_range}")
+    # ── Sección 2: Definiciones ───────────────────────────────────────────────
+    defs_data = [
+        ("PET",        "Población en edad de trabajar",       "Personas de 15 años o más (criterio DANE post-2022).",                                          BT_DEEP),
+        ("PEA / FT",   "Población económicamente activa",     "Ocupados + desocupados. La «fuerza de trabajo» del país.",                                       BT_BLUE),
+        ("OCI",        "Ocupados",                            "Personas que trabajaron al menos una hora remunerada o sin remuneración en la semana de referencia.", BT_TEAL),
+        ("DSI",        "Desocupados",                         "Personas sin empleo que buscaron activamente y están disponibles.",                               BT_NAVY),
+        ("FFT",        "Fuera de fuerza de trabajo",          "Personas en edad de trabajar que ni trabajan ni buscan: estudiantes, hogar, jubilados, desalentados.", BT_BLUE),
+        ("Informalidad","Tasa de informalidad (DANE 2022)",   "Combina posición ocupacional, tamaño de empresa, afiliación a salud y pensión, registro mercantil, oficio y rama. Implementación en <code>src/indicators.py</code>.", BT_TEAL),
+    ]
+    defs_left  = "".join(def_block(*d) for d in defs_data[:3])
+    defs_right = "".join(def_block(*d) for d in defs_data[3:])
+    sec3 = (
+        h2("3 · Definiciones operativas (OIT / DANE)")
+        + f"<div style='display:grid; grid-template-columns:1fr 1fr; gap:1rem;'>"
+        + f"<div>{defs_left}</div><div>{defs_right}</div></div>"
+    )
+
+    # ── Sección 3: Trazabilidad ───────────────────────────────────────────────
+    rows_data = [
+        ("TD",             "OCI, DSI, FEX_C18",          "Σ(DSI·FEX) ÷ Σ((OCI+DSI)·FEX) × 100"),
+        ("TO",             "OCI, P6040, FEX_C18",         "Σ(OCI·FEX) ÷ Σ(PET·FEX) × 100, PET = P6040 ≥ 15"),
+        ("TGP",            "OCI, DSI, P6040",             "Σ((OCI+DSI)·FEX) ÷ Σ(PET·FEX) × 100"),
+        ("Informalidad",   "P6430, P6920, P6090, +13",    "Regla DANE en src/indicators.py"),
+        ("Ingreso mediano","P6500, FEX_C18",               "Mediana ponderada por FEX entre ocupados"),
+        ("Sexo",           "P3271",                        "Sexo al nacer (post-rediseño; reemplaza P6020)"),
+        ("Edad / Pirámide","P6040",                        "Quinquenios 15-19, 20-24 … 65+ (estándar OIT)"),
+        ("Sector",         "RAMA2D_R4",                   "CIIU Rev.4 a 2 dígitos"),
+    ]
+    tabla_rows = "".join(
+        tr(ind, v, c, last=(i == len(rows_data) - 1))
+        for i, (ind, v, c) in enumerate(rows_data)
+    )
+    sec4 = (
+        h2("4 · Trazabilidad de variables")
+        + f"<div style='background:{IB}; border:1px solid {LN}; border-radius:10px; overflow:hidden;'>"
+        + f"<table style='width:100%; border-collapse:collapse; font-size:0.88rem;'>"
+        + f"<thead><tr style='background:{PB}; border-bottom:2px solid {LN};'>"
+        + f"<th style='padding:0.5rem 0.65rem; text-align:left; color:{TX}; font-size:0.8rem; text-transform:uppercase; letter-spacing:.05em;'>Indicador</th>"
+        + f"<th style='padding:0.5rem 0.65rem; text-align:left; color:{TX}; font-size:0.8rem; text-transform:uppercase; letter-spacing:.05em;'>Variables GEIH</th>"
+        + f"<th style='padding:0.5rem 0.65rem; text-align:left; color:{TX}; font-size:0.8rem; text-transform:uppercase; letter-spacing:.05em;'>Cálculo</th>"
+        + f"</tr></thead><tbody>{tabla_rows}</tbody></table></div>"
+    )
+
+    # ── Sección 4: Notas ──────────────────────────────────────────────────────
+    notas = "".join([
+        note_li("<b>Ruptura de serie:</b> los datos desde 2022 <b>no son comparables</b> con series anteriores a 2021. La GEIH fue rediseñada y se aplica el marco poblacional Censo 2018."),
+        note_li("<b>Variable de sexo:</b> a partir de 2022 se usa <code>P3271</code> (sexo al nacer); el código <code>P6020</code> del diseño anterior queda obsoleto."),
+        note_li("<b>Nivel educativo:</b> se usa <code>P3042</code> en lugar de <code>P6210</code> porque esta última no aparece en el encabezado de <code>geih_2025.csv</code>."),
+        note_li("<b>Ingreso:</b> mediana ponderada en pesos corrientes, sin deflactar. Para series reales, ajusta por IPC fuera del dashboard."),
+        note_li("<b>Granularidad:</b> el parquet está en frecuencia mensual; no se reportan trimestres móviles."),
+        note_li("<b>Cita sugerida:</b> «Elaboración propia con microdatos de la GEIH-DANE, ponderados con FEX_C18»."),
+    ])
+    sec5 = (
+        h2("5 · Notas y advertencias")
+        + f"<div style='background:{IB}; border:1px solid {LN}; border-radius:10px; padding:1rem 1.2rem;'>"
+        + f"<ul style='margin:0; padding-left:1.1rem; color:{SF};'>{notas}</ul></div>"
+    )
+
+    # ── Render parte A (encabezado + params) ─────────────────────────────────
+    doc_a = (
+        f"<div style='max-width:960px; margin:0 auto; padding:0.25rem 0.5rem 1rem;'>"
+        + header + sec1
+        + "</div>"
+    )
+    st.markdown(doc_a, unsafe_allow_html=True)
+
+    # ── Chart de cobertura (Plotly, no embebible en HTML) ────────────────────
+    st.markdown(
+        f"<div style='max-width:960px; margin:0 auto;'>"
+        + h2("2 · Cobertura procesada")
+        + f"<div style='font-size:0.86rem; color:{SF}; margin-bottom:0.5rem;'>"
+        + f"Registros agregados por dimensión analítica · {year_range}</div></div>",
+        unsafe_allow_html=True,
+    )
     coverage = (
         df.groupby("dimension", as_index=False)
         .size()
@@ -2933,132 +3332,25 @@ def view_metodologia(df):
     )
     coverage["dimension_label"] = coverage["dimension"].str.replace("_", " ").str.title()
     fig = px.bar(
-        coverage,
-        x="registros",
-        y="dimension_label",
-        orientation="h",
-        color="registros",
-        color_continuous_scale=BLUE_TEAL_SCALE,
+        coverage, x="registros", y="dimension_label", orientation="h",
+        color="registros", color_continuous_scale=BLUE_TEAL_SCALE,
         text=coverage["registros"].map(lambda x: f"{x:,.0f}"),
     )
-    fig = fig_base_h(fig, "Filas agregadas por dimensión", "Cada barra es una tabla independiente del parquet")
+    fig = fig_base_h(fig, "", "Cada barra es una tabla independiente del parquet")
     fig.update_traces(textposition="outside", cliponaxis=False, marker_line_width=0)
     fig.update_coloraxes(showscale=False)
     fig.update_xaxes(title_text="Registros")
     fig.update_yaxes(title_text="")
-    fig.update_layout(height=H_SINGLE, margin=dict(l=146, r=34, t=90, b=48))
+    fig.update_layout(height=H_SINGLE, margin=dict(l=146, r=34, t=48, b=48))
     st.plotly_chart(fig, use_container_width=True)
 
-    # Bloque 3: definiciones operativas
-    render_section("Definiciones operativas (OIT / DANE)", "Cómo entender los términos técnicos")
-    defs = [
-        ("PET", "Población en edad de trabajar", "Personas de 15 años o más (criterio DANE post-2022)."),
-        ("PEA / FT", "Población económicamente activa", "Ocupados + desocupados. La 'fuerza de trabajo' del país."),
-        ("OCI", "Ocupados", "Personas que trabajaron al menos una hora remunerada o sin remuneración en la semana de referencia."),
-        ("DSI", "Desocupados", "Personas sin empleo que realizaron búsqueda activa y están disponibles."),
-        ("FFT", "Fuera de fuerza de trabajo", "Personas en edad de trabajar que ni trabajan ni buscan: estudiantes, hogar, jubilados, desalentados."),
-        ("Informalidad", "Tasa de informalidad (DANE 2022)", "Combina posición ocupacional, tamaño de empresa, afiliación a salud y pensión, registro mercantil, oficio y rama. Implementación en src/indicators.py."),
-    ]
-    cols = st.columns(2, gap="large")
-    for i, (code, name, desc) in enumerate(defs):
-        with cols[i % 2]:
-            st.markdown(
-                f"<div class='mini-card' style='margin-bottom:0.55rem; border-left: 4px solid {BT_DEEP};'>"
-                f"<div style='display:flex; align-items:baseline; gap:0.55rem; margin-bottom:0.25rem;'>"
-                f"  <div class='display-serif' style='font-size:1.25rem; font-weight:700; color:{BT_DEEP};'>{code}</div>"
-                f"  <div style='color:{t['text']}; font-weight:700; font-size:0.92rem;'>{name}</div>"
-                f"</div>"
-                f"<div style='color:{t['soft_text']}; font-size:0.88rem; line-height:1.5'>{desc}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-
-    # Bloque 4: trazabilidad de variables
-    render_section("Trazabilidad de variables", "De qué columna del microdato sale cada cifra")
-    st.markdown(
-        f"""
-        <div class='mini-card' style='margin-bottom:0.7rem;'>
-          <table style='width:100%; border-collapse:collapse; font-size:0.88rem; color:{t["soft_text"]};'>
-            <thead>
-              <tr style='border-bottom:1px solid {t["line"]}; text-align:left;'>
-                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Indicador</th>
-                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Variables GEIH</th>
-                <th style='padding:0.5rem 0.6rem; color:{t["text"]};'>Cálculo</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>TD</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>DSI</code>, <code>FEX_C18</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Σ(DSI·FEX) ÷ Σ((OCI+DSI)·FEX) × 100</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>TO</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>P6040</code>, <code>FEX_C18</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Σ(OCI·FEX) ÷ Σ(PET·FEX) × 100, PET = P6040 ≥ 15</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>TGP</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>OCI</code>, <code>DSI</code>, <code>P6040</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Σ((OCI+DSI)·FEX) ÷ Σ(PET·FEX) × 100</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>Informalidad</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>P6430</code>, <code>P6920</code>, <code>P6090</code>, +13 más</td>
-                <td style='padding:0.5rem 0.6rem;'>Regla DANE en src/indicators.py</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>Ingreso mediano</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>P6500</code>, <code>FEX_C18</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Mediana ponderada por FEX entre ocupados</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>Sexo</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>P3271</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Sexo al nacer (post-rediseño; reemplaza P6020)</td>
-              </tr>
-              <tr style='border-bottom:1px solid {t["line"]};'>
-                <td style='padding:0.5rem 0.6rem;'><b>Edad / Pirámide</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>P6040</code></td>
-                <td style='padding:0.5rem 0.6rem;'>Quinquenios 15-19, 20-24 … 65+ (estándar OIT)</td>
-              </tr>
-              <tr>
-                <td style='padding:0.5rem 0.6rem;'><b>Sector</b></td>
-                <td style='padding:0.5rem 0.6rem;'><code>RAMA2D_R4</code></td>
-                <td style='padding:0.5rem 0.6rem;'>CIIU Rev.4 a 2 dígitos</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    # ── Render parte B (definiciones + trazabilidad + notas) ─────────────────
+    doc_b = (
+        f"<div style='max-width:960px; margin:0 auto; padding:0 0.5rem 3rem;'>"
+        + sec3 + sec4 + sec5
+        + "</div>"
     )
-
-    # Bloque 5: notas críticas
-    render_section("Notas y advertencias", "Lo que debes citar al usar estas cifras")
-    st.markdown(
-        f"""
-        <div class='interpretation-block'>
-          <div class='interpretation-title'>Comparabilidad y supuestos</div>
-          <div class='interpretation-text'>
-            <ul style='margin:0.4rem 0 0 1.1rem; padding:0; line-height:1.65;'>
-              <li><b>Ruptura de serie:</b> los datos desde 2022 <b>no son comparables</b> con series anteriores a 2021.
-                  La GEIH fue rediseñada y se aplica el marco poblacional Censo 2018.</li>
-              <li><b>Variable de sexo:</b> a partir de 2022 se usa <code>P3271</code> (sexo al nacer);
-                  el código <code>P6020</code> del diseño anterior queda obsoleto.</li>
-              <li><b>Nivel educativo:</b> se usa <code>P3042</code> en lugar de <code>P6210</code> porque
-                  esta última no aparece en el encabezado de <code>geih_2025.csv</code>.</li>
-              <li><b>Ingreso:</b> se reporta como mediana ponderada en pesos corrientes, sin deflactar.
-                  Para series reales, ajusta por IPC fuera del dashboard.</li>
-              <li><b>Granularidad:</b> el parquet está en frecuencia mensual; no se reportan trimestres móviles.</li>
-              <li><b>Cita sugerida:</b> "Elaboración propia con microdatos de la GEIH-DANE,
-                  ponderados con FEX_C18".</li>
-            </ul>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(doc_b, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------------------
@@ -3086,15 +3378,21 @@ if df_all.empty:
 vista = render_side_nav()
 
 page_shell = st.container()
+_vista_sin_filtros = vista in ("metodologia", "instrucciones")
+
 with page_shell:
-    hero_card = st.container(border=True, key="hero_filters_card")
-    with hero_card:
-        title_slot = st.container()
-        filters_slot = st.container()
+    if _vista_sin_filtros:
+        title_slot   = st.empty()
+        filters_slot = st.empty()
+    else:
+        hero_card = st.container(border=True, key="hero_filters_card")
+        with hero_card:
+            title_slot   = st.container()
+            filters_slot = st.container()
     body_slot = st.container()
 
 # Metodología y manual no necesitan filtros — usar defaults sin renderizar el control
-if vista in ("metodologia", "instrucciones"):
+if _vista_sin_filtros:
     anos_sel   = sorted(df_all["ano"].dropna().unique().tolist())
     meses_sel  = sorted(df_all["mes"].dropna().unique().tolist())
     geo_level  = "Sin filtro"
@@ -3135,7 +3433,7 @@ def _dem(base_dim: str):
 
 df_sexo        = _dem("sexo")
 df_sx_age      = _dem("sexo_edad")
-df_edad_brecha = filtrar(df_all, "edad_brecha",         anos_sel, meses_sel, geo_level, geo_sel)
+df_edad_brecha = _dem("edad_brecha")
 df_sector      = filtrar(df_all, "sector",              anos_sel, meses_sel, geo_level, geo_sel)
 df_clase       = _dem("clase")
 df_civil       = _dem("estado_civil")
@@ -3159,7 +3457,8 @@ _df_city_tr  = filtrar(df_all, "ciudad",       anos_sel, _meses_todos, geo_level
 df_tendencia = active_context_df(_df_nac_tr, _df_dep_tr, _df_city_tr, geo_level, geo_sel)
 
 with title_slot:
-    render_header(vista, ultimo["periodo"].strftime("%B %Y").capitalize(), context_label)
+    if vista not in ("instrucciones", "metodologia"):
+        render_header(vista, ultimo["periodo"].strftime("%B %Y").capitalize(), context_label)
 
 with body_slot:
     if vista not in ("metodologia", "instrucciones"):
@@ -3167,7 +3466,7 @@ with body_slot:
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
-        view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label, df_tendencia, ano_ui, mes_ui)
+        view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label, df_tendencia, ano_ui, mes_ui, geo_sel=geo_sel)
     elif vista == "poblacion":
         view_caracterizacion(df_sx_age, df_edu, df_civil, df_sexo, df_clase, geo_level, geo_sel, df_dep_mapa=df_dep_mapa)
     elif vista == "ocupados":
@@ -3175,9 +3474,9 @@ with body_slot:
                       df_tendencia=df_tendencia, ano_ui=ano_ui, mes_ui=mes_ui)
     elif vista == "desocupados":
         view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, context_label, geo_level,
-                         df_tendencia=df_tendencia, ano_ui=ano_ui, mes_ui=mes_ui, df_city_mapa=df_city_mapa)
+                         df_tendencia=df_tendencia, ano_ui=ano_ui, mes_ui=mes_ui, df_city_mapa=df_city_mapa, geo_sel=geo_sel)
     elif vista == "brechas":
-        view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level)
+        view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level, geo_sel=geo_sel)
     elif vista == "instrucciones":
         view_instrucciones(df_nac, df_dep)
     else:
