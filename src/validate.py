@@ -75,11 +75,11 @@ def comparar_td(
     DataFrame con columnas: año, mes, TD, TD_oficial, diferencia, pasa
     """
     nacional = df_ind[df_ind["dimension"] == "nacional"][
-        ["año", "mes", "TD"]
+        ["_año", "MES", "TD"]
     ].copy()
 
     nacional["TD_oficial"] = nacional.apply(
-        lambda r: TD_OFICIAL.get((int(r["año"]), int(r["mes"]))),
+        lambda r: TD_OFICIAL.get((int(r["_año"]), int(r["MES"]))),
         axis=1,
     )
     nacional = nacional[nacional["TD_oficial"].notna()].copy()
@@ -90,7 +90,7 @@ def comparar_td(
     nacional["diferencia"] = (nacional["TD"] - nacional["TD_oficial"]).abs()
     nacional["pasa"] = nacional["diferencia"] <= tolerancia
 
-    return nacional.sort_values(["año", "mes"]).reset_index(drop=True)
+    return nacional.sort_values(["_año", "MES"]).reset_index(drop=True)
 
 
 def reporte_validacion(df_ind: pd.DataFrame | None = None) -> None:
@@ -127,7 +127,7 @@ def reporte_validacion(df_ind: pd.DataFrame | None = None) -> None:
     if not fallos.empty:
         print("\n  Periodos fuera de tolerancia:")
         print(
-            fallos[["año", "mes", "TD", "TD_oficial", "diferencia"]]
+            fallos[["_año", "MES", "TD", "TD_oficial", "diferencia"]]
             .to_string(index=False)
         )
     else:

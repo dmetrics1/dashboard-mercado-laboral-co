@@ -203,8 +203,8 @@ def _agg_resumen_poblacional(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
     return (
         df.group_by(por)
         .agg(
-            (pl.col("PT").fill_null(0).cast(pl.Float64) * pl.col(FEX))
-            .sum().alias("poblacion_total_exp"),
+            # Población total = suma directa del factor de expansión (metodología DANE)
+            pl.col(FEX).sum().alias("poblacion_total_exp"),
             (pl.col("FT").fill_null(0).cast(pl.Float64) * pl.col(FEX))
             .sum().alias("PEA_exp"),
             (pl.col("FFT").fill_null(0).cast(pl.Float64) * pl.col(FEX))
