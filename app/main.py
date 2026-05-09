@@ -666,10 +666,14 @@ def inject_styles(theme_name: str) -> None:
         }}
         .card {{
             border-radius: 10px;
-            padding: 0.75rem 0.85rem 0.7rem;
-            height: 148px;
+            padding: 1.1rem 1rem 1.2rem;
+            height: auto;
             position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }}
         .card::before {{
             content: "";
