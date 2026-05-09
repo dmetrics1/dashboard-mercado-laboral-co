@@ -1207,16 +1207,12 @@ def active_context_label(geo_level, geo_sel):
 # ---------------------------------------------------------------------------
 # Componentes UI
 # ---------------------------------------------------------------------------
-def render_kpi(col, label: str, value: str, foot: str, delta_html: str = ""):
+def render_kpi(col, label: str, value: str, foot: str = "", delta_html: str = ""):
     with col:
-        delta_block = f"<div style='margin-top:0.3rem'>{delta_html}</div>" if delta_html else ""
-        foot_block = f"<div class='kpi-foot'>{foot}</div>" if foot else ""
         st.markdown(
-            f"""<div class='card'>
-<div class='kpi-label'>{label}</div>
-<div class='kpi-value'>{value}</div>
-{delta_block}
-{foot_block}
+            f"""<div class='card' style='text-align:center'>
+<div class='kpi-label' style='text-align:center'>{label}</div>
+<div class='kpi-value' style='text-align:center'>{value}</div>
 </div>""",
             unsafe_allow_html=True,
         )
