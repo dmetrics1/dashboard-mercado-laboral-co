@@ -53,7 +53,7 @@ def _format_map_value(indicador: str, value) -> str:
     return f"{float(value):.1f}"
 
 
-def plot_mapa_departamentos(df, indicador="TD", title=""):
+def plot_mapa_departamentos(df, indicador="TD", title="", geo_sel="Todos"):
     t = ACTIVE_THEME
     geojson = _load_geojson()
     if df.empty or "DPTO_label" not in df.columns or indicador not in df.columns:
@@ -79,7 +79,7 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
     data = data.dropna(subset=["_geo_name"])
     data["_value_fmt"] = data[indicador].map(lambda value: _format_map_value(indicador, value))
     label = MAP_INDICATORS.get(indicador, {}).get("label", indicador)
-    
+
     fig = go.Figure(go.Choroplethmapbox(
         geojson=geojson,
         locations=data["_geo_name"],
@@ -102,6 +102,23 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
 
+    # Highlight del departamento seleccionado: borde grueso sobre el mismo polígono
+    if geo_sel not in ("Todos", "Todas", "", None):
+        sel_row = data[data["DPTO_label"] == geo_sel]
+        if not sel_row.empty:
+            fig.add_trace(go.Choroplethmapbox(
+                geojson=geojson,
+                locations=sel_row["_geo_name"],
+                z=sel_row[indicador],
+                featureidkey="properties.NOMBRE_DPT",
+                colorscale=[[0, "rgba(0,0,0,0)"], [1, "rgba(0,0,0,0)"]],
+                marker_opacity=0,
+                marker_line_width=4,
+                marker_line_color=BT_NAVY,
+                showscale=False,
+                hoverinfo="skip",
+            ))
+
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
         mapbox_zoom=4.18,
@@ -116,7 +133,7 @@ def plot_mapa_departamentos(df, indicador="TD", title=""):
     return fig
 
 
-def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
+def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD", geo_sel: str = "Todas"):
     t = ACTIVE_THEME
     if df_city.empty or "AREA_label" not in df_city.columns or indicador not in df_city.columns:
         return go.Figure()
@@ -169,6 +186,29 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD"):
         customdata=data[["AREA_label", "_value_fmt"]],
         hovertemplate="<b>%{customdata[0]}</b><br>" + f"{label}: %{{customdata[1]}}<extra></extra>",
     ))
+
+    # Highlight de la ciudad seleccionada: anillo exterior + etiqueta
+    if geo_sel not in ("Todos", "Todas", "", None):
+        sel_row = data[data["AREA_label"] == geo_sel]
+        if not sel_row.empty:
+            base_size = float(18 + (sel_row[indicador].iloc[0] - vmin) / (vmax - vmin + 1e-9) * 26)
+            fig.add_trace(go.Scattermapbox(
+                lat=sel_row["lat"], lon=sel_row["lon"],
+                mode="markers+text",
+                marker=go.scattermapbox.Marker(
+                    size=base_size + 14,
+                    color="rgba(0,0,0,0)",
+                    opacity=1,
+                ),
+                marker_line_width=3,
+                marker_line_color=BT_NAVY,
+                text=sel_row["AREA_label"],
+                textposition="top right",
+                textfont=dict(size=12, color=BT_NAVY, weight=700),
+                hoverinfo="skip",
+                showlegend=False,
+            ))
+
     fig.update_layout(
         mapbox_style="carto-positron" if st.session_state.get("theme_mode") == "Light" else "carto-darkmatter",
         mapbox_zoom=4.2,
@@ -1404,7 +1444,8 @@ def latest_departments_for_indicator(df_dep: pd.DataFrame, indicador: str) -> pd
 
 def render_map_module(df_dep: pd.DataFrame, default_indicator: str,
                       key_prefix: str, title_prefix: str,
-                      indicators: list[str] | None = None):
+                      indicators: list[str] | None = None,
+                      geo_sel: str = "Todos"):
     if df_dep.empty or "DPTO_label" not in df_dep.columns:
         placeholder(
             "El mapa regional aparecerá al regenerar el parquet con la dimensión <code>departamento</code>.",
@@ -1464,7 +1505,7 @@ def render_map_module(df_dep: pd.DataFrame, default_indicator: str,
             unsafe_allow_html=True,
         )
         st.plotly_chart(
-            plot_mapa_departamentos(df_dep, indicador, ""),
+            plot_mapa_departamentos(df_dep, indicador, "", geo_sel=geo_sel),
             use_container_width=True,
             config={"displayModeBar": False, "responsive": True},
         )
@@ -1709,7 +1750,7 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         render_section("Mapa regional", "Cambia el indicador para ver la geografía del mercado")
-        render_map_module(df_dep_mapa, "TD", "resumen", "")
+        render_map_module(df_dep_mapa, "TD", "resumen", "", geo_sel=geo_sel)
 
     # Mapa de ciudades (independiente del mapa departamental)
     if not df_city.empty and "AREA_label" in df_city.columns:
@@ -1754,7 +1795,7 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, context_label,
                         )
         with city_map_col:
             st.plotly_chart(
-                plot_mapa_ciudades(df_city, city_ind),
+                plot_mapa_ciudades(df_city, city_ind, geo_sel=geo_sel),
                 use_container_width=True,
                 config={"displayModeBar": False},
             )
@@ -2138,6 +2179,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
         df_dep_mapa, "TO", "ocupados",
         "Ocupados",
         indicators=["TO", "tasa_informalidad"],
+        geo_sel=geo_sel,
     )
 
 
@@ -2241,6 +2283,7 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
         df_dep_mapa, "TD", "desocupados",
         "Desocupados",
         indicators=["TD", "tasa_inactividad"],
+        geo_sel=geo_sel,
     )
 
     render_interpretation(
@@ -2358,7 +2401,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
     if not df_dep.empty and "DPTO_label" in df_dep.columns:
         st.markdown("<div class='section-gap-lg'></div>", unsafe_allow_html=True)
         render_section("Mapa de distribución regional", "Selecciona el indicador que quieres comparar por departamento")
-        render_map_module(df_dep_mapa, "TD", "brechas", "")
+        render_map_module(df_dep_mapa, "TD", "brechas", "", geo_sel=geo_sel)
 
     render_interpretation(
         "El comparativo regional separa departamentos por encima y por debajo del promedio nacional. "
