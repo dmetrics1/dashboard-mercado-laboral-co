@@ -238,6 +238,12 @@ ACTIVE_THEME = THEMES["Light"]
 
 AGE_ORDER = ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65+"]
 
+MESES_NOMBRE = {
+    1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+    7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic",
+}
+MESES_INVERSO = {v: k for k, v in MESES_NOMBRE.items()}
+
 # Alturas estándar para mantener proporciones homogéneas por fila
 H_PAIRED   = 480   # gráficos en columnas de 2 (mismo valor para ambos)
 H_PYRAMID  = 480   # pirámide siempre igual a su par
@@ -1149,8 +1155,12 @@ def opciones(df, dim, col):
     return df.loc[df["dimension"] == dim, col].dropna().astype(str).sort_values().unique().tolist()
 
 
-def filtrar(df, dim, anos_sel, geo_level, geo_sel):
-    base = df[(df["dimension"] == dim) & (df["ano"].isin(anos_sel))].copy()
+def filtrar(df, dim, anos_sel, meses_sel, geo_level, geo_sel):
+    base = df[
+        (df["dimension"] == dim) &
+        (df["ano"].isin(anos_sel)) &
+        (df["mes"].isin(meses_sel))
+    ].copy()
     if (
         geo_level == "Departamento"
         and geo_sel != "Todos"
@@ -1295,24 +1305,36 @@ def render_side_nav() -> str:
 
 def render_controls(df_all):
     def reset_filters_cb():
-        st.session_state.sel_ano = "Todos"
+        st.session_state.sel_ano   = "Todos"
+        st.session_state.sel_mes   = "Todos"
         st.session_state.sel_level = "Sin filtro"
-        st.session_state.sel_geo = "Todas"
+        st.session_state.sel_geo   = "Todas"
 
     st.markdown(
-        "<div class='filters-title'>Filtros territoriales</div>",
+        "<div class='filters-title'>Filtros</div>",
         unsafe_allow_html=True
     )
-    year_col, level_col, geo_col, clear_col = st.columns([0.8, 0.9, 1.2, 0.6], gap="small")
-    anos_disp = sorted(df_all["ano"].dropna().unique().tolist())
-    
+    year_col, mes_col, level_col, geo_col, clear_col = st.columns([0.7, 0.7, 0.9, 1.2, 0.55], gap="small")
+    anos_disp  = sorted(df_all["ano"].dropna().unique().tolist())
+    meses_disp = sorted(df_all["mes"].dropna().unique().tolist())
+
     with year_col:
-        ano_ui = st.selectbox("Periodo anual", ["Todos"] + [str(a) for a in anos_disp], index=0, key="sel_ano")
+        ano_ui = st.selectbox("Año", ["Todos"] + [str(a) for a in anos_disp], index=0, key="sel_ano")
     anos_sel = anos_disp if ano_ui == "Todos" else [int(ano_ui)]
-    
+
+    # Meses disponibles para el año seleccionado
+    meses_en_ano = sorted(
+        df_all[df_all["ano"].isin(anos_sel)]["mes"].dropna().unique().tolist()
+    ) if ano_ui != "Todos" else meses_disp
+    meses_opciones = [MESES_NOMBRE[m] for m in meses_en_ano if m in MESES_NOMBRE]
+
+    with mes_col:
+        mes_ui = st.selectbox("Mes", ["Todos"] + meses_opciones, index=0, key="sel_mes")
+    meses_sel = meses_disp if mes_ui == "Todos" else [MESES_INVERSO[mes_ui]]
+
     with level_col:
         geo_level = st.selectbox("Nivel territorial", ["Sin filtro", "Departamento", "Ciudad"], index=0, key="sel_level")
-    
+
     with geo_col:
         if geo_level == "Departamento":
             geo_sel = st.selectbox("Ubicación", ["Todos"] + opciones(df_all, "departamento", "DPTO_label"), index=0, key="sel_geo")
@@ -1326,7 +1348,7 @@ def render_controls(df_all):
         st.markdown("<div style='height:1.62rem'></div>", unsafe_allow_html=True)
         st.button("Limpiar", on_click=reset_filters_cb)
 
-    return ano_ui, anos_sel, geo_level, geo_sel
+    return ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel
 
 
 def add_eventos_geih(fig, t):
@@ -1346,14 +1368,14 @@ def add_eventos_geih(fig, t):
     return fig
 
 
-def render_filters_summary(ano_ui, geo_level, geo_sel):
-    # Solo mostrar chips si hay algo filtrado (no default)
-    is_default = (ano_ui == "Todos" and geo_level == "Sin filtro" and geo_sel == "Todas")
+def render_filters_summary(ano_ui, mes_ui, geo_level, geo_sel):
+    is_default = (ano_ui == "Todos" and mes_ui == "Todos" and geo_level == "Sin filtro" and geo_sel == "Todas")
     if is_default:
         return
 
     chips = "".join([
         f"<span class='pill'>📅 {ano_ui}</span>" if ano_ui != "Todos" else "",
+        f"<span class='pill'>🗓 {mes_ui}</span>" if mes_ui != "Todos" else "",
         f"<span class='pill'>🗺 {geo_level}</span>" if geo_level != "Sin filtro" else "",
         f"<span class='pill'>📍 {geo_sel}</span>" if geo_sel not in ("Todas", "Todos") else "",
     ])
@@ -2714,18 +2736,20 @@ with page_shell:
 # Metodología y manual no necesitan filtros — usar defaults sin renderizar el control
 if vista in ("metodologia", "instrucciones"):
     anos_sel   = sorted(df_all["ano"].dropna().unique().tolist())
+    meses_sel  = sorted(df_all["mes"].dropna().unique().tolist())
     geo_level  = "Sin filtro"
     geo_sel    = "Todas"
     ano_ui     = "Todos"
+    mes_ui     = "Todos"
 else:
     with filters_slot:
-        ano_ui, anos_sel, geo_level, geo_sel = render_controls(df_all)
+        ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel = render_controls(df_all)
 
 # Filtrar dimensiones
-df_nac         = filtrar(df_all, "nacional",            anos_sel, geo_level, geo_sel)
-df_dep         = filtrar(df_all, "departamento",        anos_sel, geo_level, geo_sel)
-df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, "Sin filtro", "Todas")
-df_city        = filtrar(df_all, "ciudad",              anos_sel, geo_level, geo_sel)
+df_nac         = filtrar(df_all, "nacional",            anos_sel, meses_sel, geo_level, geo_sel)
+df_dep         = filtrar(df_all, "departamento",        anos_sel, meses_sel, geo_level, geo_sel)
+df_dep_mapa    = filtrar(df_all, "departamento",        anos_sel, meses_sel, "Sin filtro", "Todas")
+df_city        = filtrar(df_all, "ciudad",              anos_sel, meses_sel, geo_level, geo_sel)
 
 if "FFT_exp" in df_dep_mapa.columns and "PET_exp" in df_dep_mapa.columns:
     df_dep_mapa = df_dep_mapa.copy()
@@ -2743,19 +2767,19 @@ else:
 
 def _dem(base_dim: str):
     if _dem_prefix:
-        r = filtrar(df_all, _dem_prefix + base_dim, anos_sel, geo_level, geo_sel)
+        r = filtrar(df_all, _dem_prefix + base_dim, anos_sel, meses_sel, geo_level, geo_sel)
         if not r.empty:
             return r
-    return filtrar(df_all, base_dim, anos_sel, geo_level, geo_sel)
+    return filtrar(df_all, base_dim, anos_sel, meses_sel, geo_level, geo_sel)
 
 df_sexo        = _dem("sexo")
 df_sx_age      = _dem("sexo_edad")
-df_edad_brecha = filtrar(df_all, "edad_brecha",         anos_sel, geo_level, geo_sel)
-df_sector      = filtrar(df_all, "sector",              anos_sel, geo_level, geo_sel)
+df_edad_brecha = filtrar(df_all, "edad_brecha",         anos_sel, meses_sel, geo_level, geo_sel)
+df_sector      = filtrar(df_all, "sector",              anos_sel, meses_sel, geo_level, geo_sel)
 df_clase       = _dem("clase")
 df_civil       = _dem("estado_civil")
 df_edu         = _dem("educacion")
-df_pos         = filtrar(df_all, "posicion_ocupacional", anos_sel, geo_level, geo_sel)
+df_pos         = filtrar(df_all, "posicion_ocupacional", anos_sel, meses_sel, geo_level, geo_sel)
 
 if df_nac.empty:
     st.warning("No hay datos nacionales para los filtros seleccionados. Relaja los filtros o regenera el parquet.")
@@ -2770,7 +2794,7 @@ with title_slot:
 
 with body_slot:
     if vista not in ("metodologia", "instrucciones"):
-        render_filters_summary(ano_ui, geo_level, geo_sel)
+        render_filters_summary(ano_ui, mes_ui, geo_level, geo_sel)
         st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
