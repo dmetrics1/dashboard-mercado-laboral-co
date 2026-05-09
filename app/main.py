@@ -234,7 +234,7 @@ THEMES = {
     },
 }
 
-ACTIVE_THEME = THEMES["Dark"]
+ACTIVE_THEME = THEMES["Light"]
 
 AGE_ORDER = ["15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65+"]
 
@@ -1252,7 +1252,7 @@ def render_side_nav() -> str:
     vista = st.query_params.get("view", "resumen")
     if vista not in VIEWS: vista = "resumen"
 
-    current_theme = st.session_state.get("theme_mode", "Dark")
+    current_theme = st.session_state.get("theme_mode", "Light")
     t = ACTIVE_THEME
 
     items_html = ""
@@ -2683,7 +2683,7 @@ def view_metodologia(df):
 # Punto de entrada
 # ---------------------------------------------------------------------------
 if "theme_mode" not in st.session_state:
-    st.session_state["theme_mode"] = "Dark"
+    st.session_state["theme_mode"] = "Light"
 
 # Toggle de tema via query param (clic en ícono luna/sol)
 _qtheme = st.query_params.get("theme", None)

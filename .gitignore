@@ -30,6 +30,9 @@ build/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
+# Variables de entorno y tokens (NUNCA subir al repo)
+.env
+
 # Streamlit
 .streamlit/secrets.toml
 

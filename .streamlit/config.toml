@@ -6,9 +6,9 @@ enableCORS = false
 gatherUsageStats = false
 
 [theme]
-base = "dark"
-primaryColor    = "#7C3AED"
-backgroundColor = "#080c1a"
-secondaryBackgroundColor = "#0c1223"
-textColor       = "#F1F5F9"
+base = "light"
+primaryColor    = "#1E2D55"
+backgroundColor = "#F4EFE6"
+secondaryBackgroundColor = "#FBF8F1"
+textColor       = "#1A1812"
 font            = "sans serif"
