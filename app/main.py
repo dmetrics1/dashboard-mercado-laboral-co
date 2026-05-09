@@ -1041,7 +1041,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
             xanchor="left",
             pad=dict(l=4),
         ),
-        margin=dict(l=16, r=18, t=72 if full_title else 18, b=36),
+        margin=dict(l=16, r=18, t=72 if full_title else 18, b=56),
         hoverlabel=dict(
             bgcolor=t["panel_solid"],
             bordercolor=t["line"],
@@ -1066,9 +1066,10 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
         ),
         legend=dict(
             orientation="h",
-            y=1.06,
+            y=-0.18,
             x=0,
-            yanchor="bottom",
+            yanchor="top",
+            xanchor="left",
             bgcolor="rgba(0,0,0,0)",
             title_text="",
             font=dict(color=t["soft_text"], size=11),
