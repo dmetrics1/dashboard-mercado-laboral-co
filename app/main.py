@@ -1064,6 +1064,126 @@ def inject_styles(theme_name: str) -> None:
         [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
         [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"],
         .stAppDeployButton {{ display: none !important; }}
+
+        /* ── Tab bar inferior — oculta en desktop ──────────────────────── */
+        .mobile-tabbar {{ display: none; }}
+
+        /* ── MOBILE ≤ 768px ─────────────────────────────────────────────── */
+        @media (max-width: 768px) {{
+
+            /* Contenido a ancho completo + espacio para tab bar */
+            .block-container,
+            [data-testid="stAppViewMainArea"] .block-container,
+            [data-testid="stAppViewContainer"] .block-container {{
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-left: 0 !important;
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+                padding-top: 0.5rem !important;
+                padding-bottom: 5rem !important;
+            }}
+
+            /* Sidebar fija — oculta */
+            .fixed-sidebar {{ display: none !important; }}
+
+            /* ── Tab bar fija en el fondo ─────────────────────────────── */
+            .mobile-tabbar {{
+                display: flex !important;
+                position: fixed;
+                bottom: 0; left: 0; right: 0;
+                height: 56px;
+                background: {t['panel_bg']};
+                border-top: 1px solid {t['line']};
+                z-index: 9999;
+                padding-bottom: env(safe-area-inset-bottom);
+                box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
+            }}
+            .mobile-tab {{
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.1rem;
+                text-decoration: none !important;
+                color: {t['muted']} !important;
+                font-size: 0;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                padding: 0.25rem 0.05rem 0.2rem;
+                border-top: 2px solid transparent;
+                transition: color 0.15s, border-color 0.15s;
+                -webkit-tap-highlight-color: transparent;
+            }}
+            .mobile-tab span {{
+                display: none;
+            }}
+            .mobile-tab svg {{
+                width: 1.2rem; height: 1.2rem;
+                stroke-width: 1.65;
+                flex-shrink: 0;
+            }}
+            .mobile-tab.active {{
+                color: {BT_DEEP} !important;
+                border-top-color: {BT_DEEP};
+            }}
+            .mobile-tab.active svg {{
+                stroke-width: 2.1;
+            }}
+            .mobile-tab.active span {{
+                display: block;
+                font-size: 0.55rem;
+                color: {BT_DEEP} !important;
+            }}
+            .mobile-tab-extra {{
+                flex: 0 0 40px;
+            }}
+
+            /* Columnas de Streamlit apiladas */
+            [data-testid="column"] {{
+                width: 100% !important;
+                min-width: 100% !important;
+                flex: none !important;
+            }}
+
+            /* Grids CSS dentro de HTML inyectado */
+            div[style*="grid-template-columns:repeat(4,1fr)"] {{
+                grid-template-columns: repeat(2, 1fr) !important;
+            }}
+            div[style*="grid-template-columns:repeat(2,1fr)"] {{
+                grid-template-columns: 1fr !important;
+            }}
+            div[style*="grid-template-columns:1fr 1fr"] {{
+                grid-template-columns: 1fr !important;
+            }}
+            div[style*="grid-template-columns:repeat(4, 1fr)"] {{
+                grid-template-columns: repeat(2, 1fr) !important;
+            }}
+
+            /* Tipografía reducida */
+            .kpi-value            {{ font-size: 1.65rem !important; }}
+            .kpi-label            {{ font-size: 0.65rem !important; }}
+            .section-header-title {{ font-size: 1.05rem !important; }}
+            .topbar-title         {{ font-size: 1.25rem !important; }}
+            .topbar-sub           {{ font-size: 0.78rem !important; }}
+            .interpretation-text  {{ font-size: 0.86rem !important; }}
+
+            /* Cards y paddings más compactos */
+            .card                {{ padding: 0.85rem 0.75rem 0.9rem !important; }}
+            .mini-card           {{ padding: 0.55rem 0.7rem !important; }}
+            .interpretation-block{{ padding: 0.8rem 0.9rem !important; }}
+            [data-testid="stPlotlyChart"] {{ padding: 0.3rem 0.25rem !important; }}
+
+            /* Hero card sin margen negativo en mobile */
+            .st-key-hero_filters_card,
+            .st-key-hero_filters_card [data-testid="stVerticalBlockBorderWrapper"] {{
+                margin-top: 0 !important;
+            }}
+
+            /* Mapas — panel de control va debajo del mapa */
+            [data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; }}
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -1370,6 +1490,29 @@ def render_side_nav() -> str:
     </div>
 </div>
 </div>""", unsafe_allow_html=True)
+
+    # Tab bar fija inferior para móvil
+    SHORT_LABELS = {
+        "resumen":       "Resumen",
+        "poblacion":     "Población",
+        "ocupados":      "Ocupados",
+        "desocupados":   "Desocup.",
+        "brechas":       "Brechas",
+        "instrucciones": "Guía",
+        "metodologia":   "Método",
+    }
+    tab_items = "".join(
+        f"<a href='?view={key}&theme={current_theme}' class='mobile-tab{' active' if vista == key else ''}' target='_self'>"
+        f"{icon_svg}<span>{SHORT_LABELS.get(key, label)}</span></a>"
+        for key, label, icon_svg in NAV_ITEMS
+    )
+    st.markdown(
+        f"<div class='mobile-tabbar'>{tab_items}"
+        f"<a href='?view={vista}&theme={new_theme}' class='mobile-tab mobile-tab-extra' target='_self' title='{theme_title}'>{theme_icon}</a>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
     return vista
 
 
