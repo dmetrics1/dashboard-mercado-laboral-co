@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import streamlit as st
+from plotly.subplots import make_subplots
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -2342,7 +2342,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
     if not df_sector.empty and {"RAMA2D_R4_label", "tasa_informalidad"}.issubset(df_sector.columns):
         st.markdown("<div class='section-gap'></div>", unsafe_allow_html=True)
         render_section("Informalidad laboral", "P6090: ocupados sin afiliación contributiva")
-        
+
         # Top 10 ramas con mayor informalidad
         inf_sec = (
             df_sector.groupby("RAMA2D_R4_label", as_index=False)["tasa_informalidad"]
@@ -2351,7 +2351,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             .tail(10)
         )
         inf_sec["txt"] = inf_sec["tasa_informalidad"].map(lambda x: f"{x:.1f}%")
-        
+
         fig = px.bar(
             inf_sec, x="tasa_informalidad", y="RAMA2D_R4_label", orientation="h",
             text="txt",
@@ -2364,7 +2364,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
         fig.update_yaxes(title_text="")
         fig.update_layout(height=H_SINGLE, margin=dict(r=90))
         st.plotly_chart(fig, use_container_width=True)
-        
+
         inf_text = "La informalidad laboral en Colombia es estructural: oscila entre 55% y 60% a nivel nacional. La concentración crítica está en agricultura, ganadería y comercio menor, donde la falta de afiliación al sistema contributivo es la norma. Cualquier política de formalización debe atacar primero estos sectores."
         render_interpretation(inf_text, title="Lectura de informalidad")
 
@@ -3126,30 +3126,30 @@ def _render_guide_doc(t):
 
     sec1 = (
         h2("1 &middot; Navegación y filtros")
-        + f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:0.5rem;'>"
-        + f"<div>"
+        + "<div style='display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:0.5rem;'>"
+        + "<div>"
         + f"<p style='font-weight:700;color:{BT_DEEP};font-size:0.85rem;letter-spacing:0.06em;"
         f"text-transform:uppercase;margin:0 0 0.4rem;'>Filtros globales</p>"
         + f"<ul style='margin:0 0 0 1.1rem;padding:0;color:{SF};line-height:1.7;font-size:0.9rem;'>"
-        + f"<li><b>Año:</b> 2022–2025 o &laquo;Todos&raquo; para la serie completa.</li>"
-        + f"<li><b>Mes:</b> fija un mes para ver el punto exacto; &laquo;Todos&raquo; para la tendencia anual.</li>"
-        + f"<li><b>Nivel territorial:</b> Sin filtro = nacional; Departamento o Ciudad para enfocar.</li>"
-        + f"<li><b>Ubicación:</b> aparece según el nivel — 32 departamentos o 23 áreas metropolitanas.</li>"
-        + f"</ul>"
+        + "<li><b>Año:</b> 2022–2025 o &laquo;Todos&raquo; para la serie completa.</li>"
+        + "<li><b>Mes:</b> fija un mes para ver el punto exacto; &laquo;Todos&raquo; para la tendencia anual.</li>"
+        + "<li><b>Nivel territorial:</b> Sin filtro = nacional; Departamento o Ciudad para enfocar.</li>"
+        + "<li><b>Ubicación:</b> aparece según el nivel — 32 departamentos o 23 áreas metropolitanas.</li>"
+        + "</ul>"
         + f"<p style='color:{MU};font-size:0.83rem;margin:0.5rem 0 0;'>Las vistas <b>Guía</b> y <b>Metodología</b> no usan filtros.</p>"
-        + f"</div>"
-        + f"<div>"
+        + "</div>"
+        + "<div>"
         + f"<p style='font-weight:700;color:{BT_DEEP};font-size:0.85rem;letter-spacing:0.06em;"
         f"text-transform:uppercase;margin:0 0 0.4rem;'>Las 5 vistas analíticas</p>"
         + f"<ul style='margin:0 0 0 1.1rem;padding:0;color:{SF};line-height:1.7;font-size:0.9rem;'>"
-        + f"<li><b>Resumen:</b> KPIs nacionales, tendencia TD/TO/TGP y mapas territoriales.</li>"
-        + f"<li><b>Población:</b> pirámide por quinquenios, educación, estado civil, clase.</li>"
-        + f"<li><b>Ocupados:</b> sectores económicos, informalidad, ingreso mediano, mapa de ciudades.</li>"
-        + f"<li><b>Desocupados:</b> perfil por sexo, edad, educación, inactivos (FFT) y mapa de ciudades.</li>"
-        + f"<li><b>Brechas:</b> género (TD, TO, informalidad, ingreso), etaria 15-28 vs 29+ y comparativa departamental.</li>"
-        + f"</ul>"
-        + f"</div>"
-        + f"</div>"
+        + "<li><b>Resumen:</b> KPIs nacionales, tendencia TD/TO/TGP y mapas territoriales.</li>"
+        + "<li><b>Población:</b> pirámide por quinquenios, educación, estado civil, clase.</li>"
+        + "<li><b>Ocupados:</b> sectores económicos, informalidad, ingreso mediano, mapa de ciudades.</li>"
+        + "<li><b>Desocupados:</b> perfil por sexo, edad, educación, inactivos (FFT) y mapa de ciudades.</li>"
+        + "<li><b>Brechas:</b> género (TD, TO, informalidad, ingreso), etaria 15-28 vs 29+ y comparativa departamental.</li>"
+        + "</ul>"
+        + "</div>"
+        + "</div>"
     )
 
     sec2 = (
@@ -3289,9 +3289,9 @@ def _render_guide_doc(t):
 
     sec4 = (
         h2("4 &middot; Rutas de lectura por perfil")
-        + f"<div style='display:grid;grid-template-columns:1fr 1fr;gap:0 2rem;'>"
+        + "<div style='display:grid;grid-template-columns:1fr 1fr;gap:0 2rem;'>"
         + rutas_html
-        + f"</div>"
+        + "</div>"
     )
 
     sec5 = (
@@ -3305,7 +3305,7 @@ def _render_guide_doc(t):
         + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Ingreso mediano &ne; ingreso promedio.</b> La mediana es robusta a extremos. Un mediano bajo puede coexistir con ingresos muy altos en sectores de élite.</li>"
         + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Toda cifra está expandida con FEX_C18.</b> Son personas representadas, no encuestadas. No sumes valores de distintas tablas directamente sin considerar el factor de expansión.</li>"
         + f"<li style='margin-bottom:0.5rem;'><b style='color:{TX};'>Las brechas cambian muy lento.</b> Un quiebre brusco en un mes (brecha que salta 5 pp) debe sospecharse de variación muestral antes de atribuirlo a un fenómeno real.</li>"
-        + f"</ol>"
+        + "</ol>"
     )
 
     doc = (
@@ -3384,7 +3384,7 @@ def view_metodologia(df):
 
     # ── Sección 1: Parámetros ─────────────────────────────────────────────────
     params_grid = (
-        f"<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:0.5rem;'>"
+        "<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:0.5rem;'>"
         + param_card("Fuente", "DANE GEIH", "Encuesta rediseñada (2022). Bases anuales consolidadas.")
         + param_card("Marco muestral", "Probabilístico", "Multietápico, estratificado, por conglomerados. 23 áreas metropolitanas.")
         + param_card("Precisión", "CV &lt; 5%", "Indicadores publicados solo para niveles con suficiencia muestral.")
@@ -3406,7 +3406,7 @@ def view_metodologia(df):
     defs_right = "".join(def_block(*d) for d in defs_data[3:])
     sec3 = (
         h2("3 · Definiciones operativas (OIT / DANE)")
-        + f"<div style='display:grid; grid-template-columns:1fr 1fr; gap:1rem;'>"
+        + "<div style='display:grid; grid-template-columns:1fr 1fr; gap:1rem;'>"
         + f"<div>{defs_left}</div><div>{defs_right}</div></div>"
     )
 
@@ -3428,7 +3428,7 @@ def view_metodologia(df):
     sec4 = (
         h2("4 · Trazabilidad de variables")
         + f"<div style='background:{IB}; border:1px solid {LN}; border-radius:10px; overflow:hidden;'>"
-        + f"<table style='width:100%; border-collapse:collapse; font-size:0.88rem;'>"
+        + "<table style='width:100%; border-collapse:collapse; font-size:0.88rem;'>"
         + f"<thead><tr style='background:{PB}; border-bottom:2px solid {LN};'>"
         + f"<th style='padding:0.5rem 0.65rem; text-align:left; color:{TX}; font-size:0.8rem; text-transform:uppercase; letter-spacing:.05em;'>Indicador</th>"
         + f"<th style='padding:0.5rem 0.65rem; text-align:left; color:{TX}; font-size:0.8rem; text-transform:uppercase; letter-spacing:.05em;'>Variables GEIH</th>"
@@ -3453,7 +3453,7 @@ def view_metodologia(df):
 
     # ── Render parte A (encabezado + params) ─────────────────────────────────
     doc_a = (
-        f"<div style='max-width:960px; margin:0 auto; padding:0.25rem 0.5rem 1rem;'>"
+        "<div style='max-width:960px; margin:0 auto; padding:0.25rem 0.5rem 1rem;'>"
         + header + sec1
         + "</div>"
     )
@@ -3461,7 +3461,7 @@ def view_metodologia(df):
 
     # ── Chart de cobertura (Plotly, no embebible en HTML) ────────────────────
     st.markdown(
-        f"<div style='max-width:960px; margin:0 auto;'>"
+        "<div style='max-width:960px; margin:0 auto;'>"
         + h2("2 · Cobertura procesada")
         + f"<div style='font-size:0.86rem; color:{SF}; margin-bottom:0.5rem;'>"
         + f"Registros agregados por dimensión analítica · {year_range}</div></div>",
@@ -3489,7 +3489,7 @@ def view_metodologia(df):
 
     # ── Render parte B (definiciones + trazabilidad + notas) ─────────────────
     doc_b = (
-        f"<div style='max-width:960px; margin:0 auto; padding:0 0.5rem 3rem;'>"
+        "<div style='max-width:960px; margin:0 auto; padding:0 0.5rem 3rem;'>"
         + sec3 + sec4 + sec5
         + "</div>"
     )

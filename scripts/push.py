@@ -5,7 +5,6 @@ Ejecutar desde la raiz del proyecto:
     python scripts/push.py
     python scripts/push.py "mensaje del commit personalizado"
 """
-import os
 import subprocess
 import sys
 from pathlib import Path

@@ -1,0 +1,44 @@
+[project]
+name = "dashboard-mercado-laboral-co"
+version = "0.1.0"
+description = "Interactive dashboard for the Colombian labor market — DANE/GEIH microdata."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Daniel Molina Barrios" }]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+    ".venv",
+    "data",
+    "notebooks",
+    "scripts",
+    "build",
+    "dist",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # warnings
+]
+ignore = [
+    "E501",  # line-too-long — relax it; we already set line-length above
+    "E701",  # multiple-statements-on-one-line (colon) — common in compact UI flow
+    "E702",  # multiple-statements-on-one-line (semicolon) — common in compact var unpacking
+    "F841",  # unused variable — common in dashboard scaffolding for readability
+    "W291",  # trailing whitespace — common in long multi-line strings
+    "W293",  # whitespace on blank line — common in multi-line CSS/HTML strings
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401", "F811"]
+"app/main.py" = ["E402"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"

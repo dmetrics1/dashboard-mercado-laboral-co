@@ -5,7 +5,7 @@ Las funciones de aggregation usan group_by nativo; la mediana ponderada usa nump
 import numpy as np
 import polars as pl
 
-from src.config import FACTOR_EXPANSION, GRUPOS_EDAD
+from src.config import FACTOR_EXPANSION
 
 FEX = FACTOR_EXPANSION
 
@@ -48,7 +48,7 @@ def _calcular_formalidad_dane(df: pl.DataFrame) -> pl.Expr:
     # Pre-procesamiento de variables auxiliares
     # ANIOS: PER - 1 (usamos _año como proxy de PER si es el año)
     anios = (pl.col("_año") if "_año" in df.columns else pl.col("PER")).cast(pl.Int32) - 1
-    
+
     # OFICIO_C8_2D: Primeros 2 dígitos
     oficio_2d = pl.col("OFICIO_C8").str.slice(0, 2).cast(pl.Int16, strict=False).fill_null(0)
 
@@ -130,7 +130,7 @@ def _agg_mercado_laboral(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
     """
     columnas_requeridas = ["OCI", "DSI", "P6040", FEX]
     _validar_cols(df, columnas_requeridas)
-    
+
     # Agregar EI al dataframe si no existe. En bases completas se usa la
     # regla DANE; en datasets mínimos se degrada sin romper TD/TO/TGP.
     if "EI" not in df.columns:
@@ -145,7 +145,7 @@ def _agg_mercado_laboral(df: pl.DataFrame, por: list[str]) -> pl.DataFrame:
             )
         else:
             df = df.with_columns(pl.lit(None).cast(pl.Int8).alias("EI"))
-        
+
     df_pet = _pet(df)
 
     # Filtrar nulls en columnas de dimensión (evita grupo "null")

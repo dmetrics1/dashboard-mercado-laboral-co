@@ -6,6 +6,7 @@ import warnings
 import pandas as pd
 import pytest
 
+from src.config import MAPEOS_COMPLEMENTARIOS
 from src.dictionary import (
     aplicar_labels,
     construir_mapeos,
@@ -13,7 +14,6 @@ from src.dictionary import (
     limpiar_diccionario,
     validar_cobertura,
 )
-from src.config import MAPEOS_COMPLEMENTARIOS
 
 
 def _dic_minimo() -> pd.DataFrame:
