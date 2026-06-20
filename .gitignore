@@ -48,3 +48,11 @@ Thumbs.db
 # Logs y temporales
 *.log
 *.tmp
+
+# Capturas originales sin nombrar (las publicadas viven en docs/screenshots/)
+images/
+
+# Caches de herramientas de desarrollo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
