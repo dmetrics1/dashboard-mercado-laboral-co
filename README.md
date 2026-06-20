@@ -5,9 +5,9 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/dmetrics1/dashboard-mercado-laboral-co/ci.yml?style=flat-square&label=tests&color=10B981)](https://github.com/dmetrics1/dashboard-mercado-laboral-co/actions)
 [![License](https://img.shields.io/github/license/dmetrics1/dashboard-mercado-laboral-co?style=flat-square&color=2563EB)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-7C3AED?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Live%20Demo-Streamlit-06B6D4?style=flat-square&logo=streamlit&logoColor=white)](STREAMLIT_URL_HERE)
+[![Streamlit](https://img.shields.io/badge/Live%20Demo-Streamlit-06B6D4?style=flat-square&logo=streamlit&logoColor=white)](https://mercado-laboral-colombia.streamlit.app/)
 
-> **🎯 Demo en vivo:** [STREAMLIT_URL_HERE](STREAMLIT_URL_HERE)
+> **🎯 Demo en vivo:** [https://mercado-laboral-colombia.streamlit.app/](https://mercado-laboral-colombia.streamlit.app/)
 > *Dashboard desplegado en Streamlit Community Cloud.*
 
 ---
