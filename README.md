@@ -5,9 +5,9 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/dmetrics1/dashboard-mercado-laboral-co/ci.yml?style=flat-square&label=tests&color=10B981)](https://github.com/dmetrics1/dashboard-mercado-laboral-co/actions)
 [![License](https://img.shields.io/github/license/dmetrics1/dashboard-mercado-laboral-co?style=flat-square&color=2563EB)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-7C3AED?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Live%20Demo-Streamlit-06B6D4?style=flat-square&logo=streamlit&logoColor=white)](https://dashboard-mercado-laboral-co-bzhchdwmbufwhwfxrrytnb.streamlit.app/)
+[![Streamlit](https://img.shields.io/badge/Live%20Demo-Streamlit-06B6D4?style=flat-square&logo=streamlit&logoColor=white)](https://dashboard-mercado-laboral-co.streamlit.app/)
 
-> **🎯 Demo en vivo:** [https://dashboard-mercado-laboral-co-bzhchdwmbufwhwfxrrytnb.streamlit.app/](https://dashboard-mercado-laboral-co-bzhchdwmbufwhwfxrrytnb.streamlit.app/)
+> **🎯 Demo en vivo:** [https://dashboard-mercado-laboral-co.streamlit.app/](https://dashboard-mercado-laboral-co.streamlit.app/)
 > *Dashboard desplegado en Streamlit Community Cloud.*
 >
 > ⏱️ **Nota:** El demo se aloja en el plan **gratuito** de Streamlit Community Cloud. Si nadie lo ha abierto en los últimos ~15 minutos, la instancia entra en modo *sleep* y la primera carga puede tardar **30–60 segundos** en despertar. Refresca si la pantalla queda en blanco — es normal.
