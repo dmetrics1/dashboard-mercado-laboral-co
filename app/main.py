@@ -405,7 +405,7 @@ NAV_LABELS = {key: label for key, label, _ in NAV_ITEMS}
 VIEWS = [key for key, _, _ in NAV_ITEMS]
 
 AUTHOR_LINKEDIN = "https://www.linkedin.com/in/daniel-molina-b76a4323b"
-AUTHOR_GITHUB = "https://github.com/dmgsjj"
+AUTHOR_GITHUB = "https://github.com/dmetrics1"
 AUTHOR_PORTFOLIO = "https://danielmolina.dev"
 
 ICON_LINKEDIN = (
