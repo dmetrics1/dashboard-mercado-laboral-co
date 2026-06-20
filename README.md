@@ -9,6 +9,8 @@
 
 > **🎯 Demo en vivo:** [https://mercado-laboral-colombia.streamlit.app/](https://mercado-laboral-colombia.streamlit.app/)
 > *Dashboard desplegado en Streamlit Community Cloud.*
+>
+> ⏱️ **Nota:** El demo se aloja en el plan **gratuito** de Streamlit Community Cloud. Si nadie lo ha abierto en los últimos ~15 minutos, la instancia entra en modo *sleep* y la primera carga puede tardar **30–60 segundos** en despertar. Refresca si la pantalla queda en blanco — es normal.
 
 ---
 
