@@ -18,14 +18,23 @@
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/01-overview-dark.png" alt="Resumen — KPIs nacionales y tendencia laboral (modo oscuro)" /></td>
-    <td><img src="docs/screenshots/02-regional-unemployment.png" alt="Mapa departamental de tasa de desempleo" /></td>
+    <td><img src="docs/screenshots/01-overview-light.png" alt="Resumen — KPIs nacionales y tendencia laboral" /></td>
+    <td><img src="docs/screenshots/02-employment-informality.png" alt="Ocupados — informalidad, ingreso mediano en COP y tendencia TO" /></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/03-population-pyramid.png" alt="Pirámide poblacional y nivel educativo" /></td>
-    <td><img src="docs/screenshots/04-employment-trends.png" alt="Ocupados — tendencia de ocupación e informalidad (modo oscuro)" /></td>
+    <td><img src="docs/screenshots/03-regional-unemployment.png" alt="Mapa departamental de tasa de desempleo" /></td>
+    <td><img src="docs/screenshots/04-overview-dark.png" alt="Resumen en modo oscuro — identidad Premium Dark Tech" /></td>
   </tr>
 </table>
+
+---
+
+## ¿Qué lo hace diferente?
+
+- **Informalidad laboral con la metodología DANE 2022**, calculada directamente desde los microdatos (afiliación contributiva, posición ocupacional, tamaño de empresa) — no solo TD/TO/TGP como la mayoría de tableros.
+- **Ingreso laboral mediano ponderado en COP** con línea de referencia del SMMLV de cada año.
+- **Brechas estructurales cuantificadas**: género (TD, TO, informalidad, ingreso), etaria 15-28 vs 29+ y territorial — con filtros activos por departamento y ciudad.
+- **Cifras validadas contra el DANE**: la TD calculada coincide con la serie oficial publicada en los 48 meses (diferencia máxima 0.05 p.p. — ver `src/validate.py`).
 
 ---
 
