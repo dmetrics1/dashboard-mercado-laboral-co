@@ -349,3 +349,25 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 - **Nota tecnica:** el testid de columnas en Streamlit 1.56 es `stColumn` (no `column`); el apilado previo funcionaba solo por el CSS nativo de Streamlit.
 
 **Auditoria final:** 390px sin desbordamiento (0 elementos), Metodologia 18 -> 0 desbordes, KPIs en 2x2, desktop sin regresiones (4 KPIs en fila, hero 179px, sidebar intacta), 25 tests y ruff en verde.
+
+---
+
+## DT-022 - Bottom sheet de filtros y experiencia movil nativa (2026-08-02)
+
+**Decision:** en movil los filtros salen del flujo del documento hacia un bottom sheet accionado por un FAB, siguiendo el principio "informacion antes que controles" (Stripe Dashboard / Material 3 / HIG).
+
+**Como funciona:**
+
+- `render_controls` emite un `<button class="dm-fab">` (icono embudo/X) y un `.dm-sheet-scrim`, solo en las vistas con filtros; ambos son `display:none` en escritorio.
+- El JS de `components.html` (el mismo iframe del notranslate) registra UN listener delegado en `document` con guard `doc.__dmSheetHooked`: click en `.dm-fab` togglea la clase `dm-filters-open` en `<html>`, click en el scrim o tecla Escape la quitan. El listener y la clase sobreviven a los reruns de Streamlit (se reconstruye el body, no el html).
+- CSS movil: el `stHorizontalBlock` de filtros se vuelve `position:fixed` inferior con `translateY(110%)` cerrado / `translateY(0)` abierto, scrim con opacidad, popovers de selects con z-index sobre el sheet, cabecera "FILTROS" via `::before`.
+- El sheet queda abierto tras cambiar un filtro (rerun): permite ajustar varios antes de cerrar.
+
+**Efecto medido (390x844):** el primer KPI pasa de y=591 (inicio del dia) a y=142; la primera pantalla muestra titulo, 4 KPIs y el inicio de la tendencia.
+
+**Otros cambios de la iteracion:**
+
+- Encabezados de seccion sticky en movil (orientacion en scroll largo).
+- Ticks del eje X responsivos: se elimina `dtick="M3"` fijo en las series; Plotly densifica segun el ancho real (en movil ~1 tick por anio, en desktop semestral). `dtick="M1"` se conserva solo con un anio especifico seleccionado.
+- Fix a11y critico: la regla de `prefers-reduced-motion` anulaba `transform` y habria dejado el sheet siempre visible; ahora solo neutraliza duraciones.
+- Sin hueco residual en la tarjeta de titulo (gap 0 del bloque en movil).

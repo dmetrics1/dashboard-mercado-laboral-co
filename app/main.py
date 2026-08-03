@@ -542,11 +542,12 @@ def inject_styles(theme_name: str) -> None:
         @media (hover: hover) {{
             .card:hover {{ transform: translateY(-2px); }}
         }}
+        /* Solo neutraliza el movimiento (duraciones), nunca transform:
+           los estados de posición (p. ej. bottom sheet) dependen de él. */
         @media (prefers-reduced-motion: reduce) {{
             *, *::before, *::after {{
                 transition-duration: 0.01ms !important;
                 animation-duration: 0.01ms !important;
-                transform: none !important;
             }}
         }}
 
@@ -987,6 +988,8 @@ def inject_styles(theme_name: str) -> None:
         .dm-grid-4 {{ grid-template-columns: repeat(4, 1fr); }}
         .dm-grid-2 {{ grid-template-columns: 1fr 1fr; }}
         .filter-btn-spacer {{ height: 1.75rem; }}
+        /* FAB y scrim del bottom sheet: solo existen en móvil */
+        .dm-fab, .dm-sheet-scrim {{ display: none; }}
         @media (max-width: 768px) {{
             .dm-grid-4 {{ grid-template-columns: repeat(2, 1fr); }}
             .dm-grid-2 {{ grid-template-columns: 1fr; }}
@@ -1271,6 +1274,86 @@ def inject_styles(theme_name: str) -> None:
             .kpi-label            {{ font-size: 0.65rem !important; }}
             .topbar-sub           {{ font-size: 0.78rem !important; }}
             .interpretation-text  {{ font-size: 0.86rem !important; }}
+
+            /* ── Información antes que controles: filtros en bottom sheet ──
+               El bloque de filtros sale del flujo hacia un panel deslizante
+               inferior; la primera pantalla queda para título + KPIs. */
+            .filters-title {{ display: none; }}
+            /* sin hueco residual en la tarjeta del título */
+            .st-key-hero_filters_card [data-testid="stVerticalBlock"] {{
+                gap: 0 !important;
+            }}
+            .st-key-hero_filters_card [data-testid="stHorizontalBlock"] {{
+                position: fixed;
+                left: 0; right: 0; bottom: 0;
+                margin: 0 !important;
+                padding: 0.75rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+                background: {t['panel_solid']};
+                border-top: 1px solid {t['line']};
+                border-radius: 20px 20px 0 0;
+                box-shadow: 0 -18px 48px rgba(0,0,0,0.40);
+                transform: translateY(110%);
+                transition: transform 0.3s cubic-bezier(0.32, 0.72, 0.35, 1);
+                z-index: 10001;
+                max-height: 75vh;
+                overflow-y: auto;
+            }}
+            html.dm-filters-open .st-key-hero_filters_card [data-testid="stHorizontalBlock"] {{
+                transform: translateY(0);
+            }}
+            /* cabecera del sheet */
+            .st-key-hero_filters_card [data-testid="stHorizontalBlock"]::before {{
+                content: "Filtros";
+                flex: 1 1 100%;
+                color: {t['muted']};
+                font-size: 0.7rem;
+                font-weight: 800;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                padding: 0.25rem 0 0;
+            }}
+            .dm-sheet-scrim {{
+                display: block;
+                position: fixed; inset: 0;
+                background: rgba(2, 6, 16, 0.60);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+                z-index: 10000;
+            }}
+            html.dm-filters-open .dm-sheet-scrim {{
+                opacity: 1;
+                pointer-events: auto;
+            }}
+            /* FAB en zona del pulgar (sobre la tab bar, esquina derecha) */
+            .dm-fab {{
+                display: flex;
+                position: fixed;
+                right: 1rem;
+                bottom: calc(76px + env(safe-area-inset-bottom));
+                width: 56px; height: 56px;
+                align-items: center; justify-content: center;
+                border: none; border-radius: 50%;
+                background: {BRAND_GRAD};
+                color: #FFFFFF;
+                box-shadow: 0 12px 28px rgba(6, 182, 212, 0.35);
+                z-index: 10002;
+                cursor: pointer;
+            }}
+            .dm-fab svg {{ width: 22px; height: 22px; }}
+            .dm-fab-close {{ display: none; }}
+            html.dm-filters-open .dm-fab-open {{ display: none; }}
+            html.dm-filters-open .dm-fab-close {{ display: flex; }}
+            /* dropdowns de los selects por encima del sheet */
+            [data-baseweb="popover"] {{ z-index: 10050 !important; }}
+
+            /* Encabezados de sección sticky: orientación durante el scroll largo */
+            .section-header {{
+                position: sticky;
+                top: 0;
+                background: {t['app_bg']};
+                z-index: 50;
+            }}
         }}
         </style>
         <div class="dm-style-marker"></div>
@@ -1660,6 +1743,19 @@ def render_controls(df_all):
         st.markdown("<div class='filter-btn-spacer'></div>", unsafe_allow_html=True)
         st.button("Limpiar", on_click=reset_filters_cb)
 
+    # FAB + scrim del bottom sheet de filtros (solo visibles en móvil vía CSS).
+    # El toggle vive en components.html: clase dm-filters-open sobre <html>.
+    _icon_filter = _I + '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46"/></svg>'
+    _icon_close = _I + '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    st.markdown(
+        f"<button class='dm-fab' aria-label='Abrir o cerrar filtros' aria-haspopup='dialog'>"
+        f"<span class='dm-fab-open'>{_icon_filter}</span>"
+        f"<span class='dm-fab-close'>{_icon_close}</span>"
+        f"</button>"
+        f"<div class='dm-sheet-scrim' aria-hidden='true'></div>",
+        unsafe_allow_html=True,
+    )
+
     return ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel
 
 
@@ -2009,9 +2105,12 @@ def view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context
         tickfont=dict(color=t["soft_text"], size=11),
         title_font=dict(color=t["muted"], size=11),
     )
-    # Eje X: ticks mensuales cuando hay un año específico, trimestrales para la serie completa
-    dtick_x = "M1" if ano_ui != "Todos" else "M3"
-    fig.update_xaxes(tickformat="%b %Y", dtick=dtick_x)
+    # Eje X: ticks mensuales con un año específico; con la serie completa Plotly
+    # elige la densidad según el ancho disponible (responsive en móvil)
+    if ano_ui != "Todos":
+        fig.update_xaxes(tickformat="%b %Y", dtick="M1")
+    else:
+        fig.update_xaxes(tickformat="%b %Y")
     fig.update_layout(height=H_SINGLE)
     fig = add_eventos_geih(fig, t)
     st.plotly_chart(fig, use_container_width=True)
@@ -2392,7 +2491,6 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
                             legendgroup="mes_sel_oc",
                             hovertemplate=f"<b>{nombre} — {mes_ui}</b>: %{{y:.1f}}%<br>%{{x|%b %Y}}<extra></extra>",
                         ), secondary_y=sec)
-        dtick_oc = "M1" if ano_ui != "Todos" else "M3"
         fig_oc = fig_base(fig_oc, "Dinámica de ocupación e informalidad", subtitulo_oc)
         fig_oc.update_yaxes(title_text="TO (%)", ticksuffix="%", secondary_y=False)
         fig_oc.update_yaxes(
@@ -2401,7 +2499,10 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             tickfont=dict(color=t["soft_text"], size=11),
             title_font=dict(color=t["muted"], size=11),
         )
-        fig_oc.update_xaxes(tickformat="%b %Y", dtick=dtick_oc)
+        if ano_ui != "Todos":
+            fig_oc.update_xaxes(tickformat="%b %Y", dtick="M1")
+        else:
+            fig_oc.update_xaxes(tickformat="%b %Y")
         fig_oc.update_layout(height=H_SINGLE)
         st.plotly_chart(fig_oc, use_container_width=True)
 
@@ -2727,7 +2828,6 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
                             legendgroup="mes_sel_des",
                             hovertemplate=f"<b>{nombre} — {mes_ui}</b>: %{{y}}<br>%{{x|%b %Y}}<extra></extra>",
                         ), secondary_y=sec)
-        dtick_des = "M1" if ano_ui != "Todos" else "M3"
         fig_des = fig_base(fig_des, "Dinámica de desempleo e inactividad", subtitulo_des)
         fig_des.update_yaxes(title_text="Inactivos (millones)", ticksuffix=" M", secondary_y=False)
         fig_des.update_yaxes(
@@ -2736,7 +2836,10 @@ def view_desocupados(df_context, df_sx_age, df_city, df_edu, df_dep_mapa, contex
             tickfont=dict(color=t["soft_text"], size=11),
             title_font=dict(color=t["muted"], size=11),
         )
-        fig_des.update_xaxes(tickformat="%b %Y", dtick=dtick_des)
+        if ano_ui != "Todos":
+            fig_des.update_xaxes(tickformat="%b %Y", dtick="M1")
+        else:
+            fig_des.update_xaxes(tickformat="%b %Y")
         fig_des.update_layout(height=H_SINGLE)
         st.plotly_chart(fig_des, use_container_width=True)
 
@@ -2942,7 +3045,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                 ))
                 fig.add_hline(y=0, line_width=1.2, line_dash="dot", line_color=t["muted"])
                 fig = fig_base(fig, "Brecha TD: Mujer − Hombre", "Puntos porcentuales · tendencia mensual")
-                fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+                fig.update_xaxes(tickformat="%b %Y")
                 fig.update_yaxes(ticksuffix=" pp")
                 fig.update_layout(height=H_PAIRED, showlegend=False)
                 st.plotly_chart(fig, use_container_width=True)
@@ -2966,7 +3069,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                 line=dict(width=2.5),
                 hovertemplate="<b>%{fullData.name}</b><br>Informalidad: %{y:.1f}%<br>%{x|%b %Y}<extra></extra>",
             )
-            fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+            fig.update_xaxes(tickformat="%b %Y")
             fig.update_yaxes(ticksuffix="%")
             fig.update_layout(height=H_PAIRED)
             st.plotly_chart(fig, use_container_width=True)
@@ -3039,7 +3142,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                     line=dict(width=2.5),
                     hovertemplate="<b>%{fullData.name}</b><br>Ingreso mediano: $%{y:,.0f} COP<br>%{x|%b %Y}<extra></extra>",
                 )
-                fig.update_xaxes(tickformat="%b %Y", dtick="M3")
+                fig.update_xaxes(tickformat="%b %Y")
                 fig.update_yaxes(tickprefix="$")
                 fig.update_layout(height=H_PAIRED)
                 # Línea SMMLV escalonada (sube cada enero)
@@ -3632,6 +3735,24 @@ components.html(
         m.name = "google";
         m.content = "notranslate";
         doc.head.appendChild(m);
+    }
+    // Bottom sheet de filtros (móvil): toggle de clase en <html>.
+    // Listener delegado en document: sobrevive a los reruns de Streamlit,
+    // que reconstruyen el DOM del body pero no reemplazan <html>.
+    if (!doc.__dmSheetHooked) {
+        doc.__dmSheetHooked = true;
+        doc.addEventListener("click", (e) => {
+            if (e.target.closest(".dm-fab")) {
+                doc.documentElement.classList.toggle("dm-filters-open");
+            } else if (e.target.closest(".dm-sheet-scrim")) {
+                doc.documentElement.classList.remove("dm-filters-open");
+            }
+        });
+        doc.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                doc.documentElement.classList.remove("dm-filters-open");
+            }
+        });
     }
     </script>""",
     height=0,
