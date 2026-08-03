@@ -242,6 +242,11 @@ Ver `docs/decisiones_tecnicas.md`. Resumen:
 - **DT-013** Refuerzo de contraste CSS para selectores en modo claro.
 - **DT-019** Rediseño visual con identidad de marca "Premium Dark Tech" (paleta de `personal_landing/colores_paleta.md` y `shiny-app/www/brand.css`): gradiente azul→cian, superficies oscuras `#0A0E1A`/`#0F1729`, tipografía Inter, KPIs en cian, rampa de gráficos de marca y tintas por tema para documentos. Detalle completo en `docs/decisiones_tecnicas.md`.
 - **DT-020** Layout global con cuadrícula de 8px: gutter uniforme de 1rem, mismo eje de inicio en las 7 vistas (verificado programáticamente en [280,16]), wrappers de elementos fijos fuera del flujo flex, documentos alineados a la izquierda. Detalle en `docs/decisiones_tecnicas.md`.
+- **DT-021** Mobile-first: tipografía fluida (`clamp()`), KPIs 2×2, clases `.dm-grid` en vez de selectores `[style*=...]`, WCAG 2.2 AA (touch ≥44px, aria-labels, focus-visible, reduced-motion).
+- **DT-022** Filtros en *bottom sheet* con FAB en móvil (información antes que controles); toggle por clase en `<html>` con listener delegado que sobrevive a los reruns de Streamlit.
+- **DT-023/024** Drawer de navegación con hamburguesa (mismo patrón del Observatorio GEIH) como navegación móvil única; tab bar inferior eliminada.
+- **DT-025** Tipografía del sistema DM: Space Grotesk (títulos), Inter (cuerpo), JetBrains Mono `tabular-nums` (KPIs, tablas, códigos).
+- **DT-026** Tokens consumidos desde `src/dm_tokens.py` (copia de `dm-design-system/dist/tokens.py`); `fig_base` parte de `dm.plotly_layout()`; fin del hardcodeo de identidad.
 
 ---
 
@@ -258,7 +263,19 @@ NO incluir en esta versiÃ³n:
 
 ## 13. Estado actual del proyecto
 
-**Ãšltima revisiÃ³n documental:** 2026-04-25.
+**Última revisión documental:** 2026-08-03. **Estado: COMPLETO y en producción** —
+demo público en https://dashboard-mercado-laboral-co.streamlit.app/ desplegado
+desde `master`, con lanzamiento empacado (carrusel PDF + kit de post en
+`02_Marca_Personal_DM/carruseles/dashboard-mercado-laboral/`).
+
+### Hitos de la fase de producto (2026-08-02/03 — detalle en docs/decisiones_tecnicas.md)
+- ✅ **Identidad de marca DM** (DT-019/020): paleta Premium Dark Tech, logo, layout global 8px.
+- ✅ **Datos validados** contra la serie oficial DANE: TD coincide en 48/48 meses (máx 0.05 p.p., `src/validate.py` corregido y extendido a 2025).
+- ✅ **Ingreso en COP** (`fmt_cop`), corte en español, bloqueo de auto-traducción de Chrome.
+- ✅ **Experiencia móvil nativa** (DT-021→024): drawer con hamburguesa, bottom sheet de filtros con FAB, KPIs 2×2, tipografía fluida, WCAG 2.2 AA; tab bar eliminada.
+- ✅ **Sistema de diseño formal adoptado** (DT-025/026): Space Grotesk + Inter + JetBrains Mono; tokens consumidos desde `src/dm_tokens.py` (copia de `dm-design-system/dist/tokens.py`) y `fig_base` sobre `dm.plotly_layout()`.
+- ✅ **Deploy en Streamlit Community Cloud** verificado en escritorio y móvil.
+- ✅ **Post de LinkedIn + carrusel editorial** (10 págs, alineado al sistema) listos para publicar.
 
 ### Ya construido
 - `spec.MD`
@@ -290,14 +307,15 @@ NO incluir en esta versiÃ³n:
 - Vistas identificadas por clave corta: `resumen`, `poblacion`, `ocupados`, `desocupados`, `brechas`, `instrucciones`, `metodologia`.
 - Toggle de tema: `?theme=Dark|Light` en query param, leÃ­do al inicio del script.
 - Ãconos: SVG inline estilo Feather/Lucide (16-20 px, stroke 1.8).
-- Paleta (marca "Premium Dark Tech", DT-019): gradiente `#1E40AF -> #2563EB -> #06B6D4`, accent `#2563EB`, accent_2 `#06B6D4`, accent_3 `#F59E0B`, positive `#10B981`, negative `#F43F5E`. Canvas oscuro `#0A0E1A`, superficies `#0F1729`/`#131C31`/`#18233C`. Tipografia `Inter`.
+- Paleta (marca "Premium Dark Tech", DT-019): gradiente `#1E40AF -> #2563EB -> #06B6D4`, accent `#2563EB`, accent_2 `#06B6D4`, accent_3 `#F59E0B`, positive `#10B981`, negative `#F43F5E`. Canvas oscuro `#0A0E1A`, superficies `#0F1729`/`#131C31`/`#18233C`.
+- Tipografía (DT-025): títulos `Space Grotesk`, cuerpo `Inter`, cifras `JetBrains Mono` con `tabular-nums`.
+- Fuente de tokens (DT-026): `src/dm_tokens.py` — copia de `dm-design-system/dist/tokens.py`; nunca editar valores a mano en este repo.
 
-### Pendiente por construir (prioridad en este orden)
-1. **`notebooks/03_validar_indicadores.ipynb`** â€” comparaciÃ³n con cifras oficiales DANE.
-2. **Tiempo promedio de bÃºsqueda (`P6240`)** â€” ya se carga la variable, falta agregar mÃ©trica al parquet y UI.
-3. **Granularidad trimestral/anual** â€” definir regla y exponer controles si se mantiene en alcance.
-4. **Deploy en Streamlit Community Cloud.**
-5. **Post de lanzamiento en LinkedIn** con narrativa y capturas.
+### Pendiente (iteración 2 — no bloquea el producto)
+1. **`notebooks/03_validar_indicadores.ipynb`** — versión notebook de la validación (la validación en sí ya vive en `src/validate.py`, 48/48).
+2. **Tiempo promedio de búsqueda (`P6240`)** — ya se carga la variable, falta agregar métrica al parquet y UI.
+3. **Granularidad trimestral/anual** — definir regla y exponer controles si se mantiene en alcance.
+4. **Deflactar ingresos por IPC** (ver sección 12).
 
 ---
 

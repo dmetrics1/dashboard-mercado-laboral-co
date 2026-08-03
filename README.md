@@ -72,7 +72,8 @@
 - **Resaltado geográfico:** al seleccionar un departamento o ciudad se resalta en el mapa con borde naranja sin ocultar el resto del territorio.
 - **Mapas independientes:** el mapa de ciudades siempre muestra todas las áreas metropolitanas independientemente del filtro de departamento activo.
 - **KPI cards compactas:** título y valor centrados, sin texto de delta ni pie de página.
-- **Tema dual** oscuro / claro con la identidad de marca *Premium Dark Tech* (paleta azul `#1E40AF` → `#2563EB` → cian `#06B6D4` sobre superficies `#0A0E1A`/`#0F1729`), CSS personalizado y tipografía `Inter`.
+- **Tema dual** oscuro / claro con la identidad de marca *Premium Dark Tech*: paleta azul `#1E40AF` → `#2563EB` → cian `#06B6D4`, títulos en `Space Grotesk`, cuerpo en `Inter` y cifras en `JetBrains Mono` con `tabular-nums`. Los tokens se consumen del sistema de diseño DM (`src/dm_tokens.py`).
+- **Experiencia móvil nativa:** drawer de navegación con hamburguesa, filtros en *bottom sheet* accionado por FAB, KPIs en cuadrícula 2×2, tipografía fluida (`clamp()`), objetivos táctiles ≥ 44px y accesibilidad WCAG 2.2 AA (focus visible, `aria-label`, `prefers-reduced-motion`, *safe areas*).
 - **Métricas avanzadas:** TD, TO, TGP, informalidad, ingreso laboral mediano, FFT por periodo, departamento y ciudad.
 
 ---
@@ -96,7 +97,7 @@
 | Gráficos | Plotly (Scatter/Choropleth Mapbox, subplots) |
 | ETL | Polars + pandas + pyarrow |
 | Persistencia | Parquet (`indicadores_mensuales.parquet`) |
-| Estilos | CSS dinámico (Dark/Light mode) · identidad de marca compartida con [la landing personal](https://github.com/dmetrics1) |
+| Estilos | CSS dinámico (Dark/Light) · tokens del sistema de diseño DM (`src/dm_tokens.py`, generado desde `dm-design-system`) |
 | Tests | pytest — 25 tests unitarios (indicadores + diccionario) |
 | Deploy | Streamlit Community Cloud |
 
@@ -169,25 +170,34 @@ pytest tests/ -v
 ```
 dashboard_mercado_laboral_co/
 ├── app/
-│   └── main.py                  # Dashboard Streamlit
+│   ├── main.py                  # Dashboard Streamlit (7 vistas, temas, móvil)
+│   └── assets/
+│       └── logo-dm.svg          # Monograma de marca (gradiente)
 ├── src/
 │   ├── config.py                # Rutas, grupos de edad, mapeos DIVIPOLA
+│   ├── dm_tokens.py             # Tokens del sistema de diseño DM (copia de dist/tokens.py)
 │   ├── etl.py                   # Pipeline principal (24 dimensiones)
 │   ├── indicators.py            # TD, TO, TGP, informalidad, ingreso mediano ponderado
 │   ├── loaders.py               # Carga multi-formato (CSV, Parquet, SAV)
 │   ├── dictionary.py            # Procesamiento diccionario GEIH
-│   └── validate.py              # Validación vs. cifras oficiales DANE
+│   └── validate.py              # Validación vs. cifras oficiales DANE (48/48 meses)
 ├── data/
 │   ├── reference/               # GeoJSON departamental
 │   └── processed/               # Parquet de salida y productos del diccionario
 ├── docs/
 │   ├── especificaciones.md      # Matriz de variables por vista
-│   └── decisiones_tecnicas.md
+│   ├── decisiones_tecnicas.md   # Log DT-001 → DT-026
+│   └── screenshots/             # Capturas del README (cómo regenerarlas: su README)
 ├── notebooks/                   # Exploración y validación
 ├── tests/                       # pytest — 25 tests unitarios
 ├── requirements.txt             # Runtime (Streamlit Community Cloud)
 └── requirements-dev.txt         # ETL + linters + tests (solo local)
 ```
+
+> **Identidad visual:** los colores, tipografías y layout provienen del sistema de
+> diseño DM (`dm-design-system`). Para cambiar la identidad se edita
+> `tokens/tokens.json` en ese repo, se regenera con `build/build.py` y se copia
+> `dist/tokens.py` aquí como `src/dm_tokens.py` — nunca editar valores a mano.
 
 ---
 
