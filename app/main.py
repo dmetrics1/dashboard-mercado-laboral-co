@@ -527,7 +527,7 @@ def inject_styles(theme_name: str) -> None:
 
         /* ── Interacción táctil y accesibilidad (todos los viewports) ────── */
         a, button {{ -webkit-tap-highlight-color: transparent; }}
-        .nav-item:focus-visible, .nav-btn:focus-visible, .mobile-tab:focus-visible,
+        .nav-item:focus-visible, .nav-btn:focus-visible, .dm-fab:focus-visible, .dm-nav-toggle:focus-visible,
         div.stButton > button:focus-visible {{
             outline: 2px solid {t['accent_2']} !important;
             outline-offset: 2px;
@@ -536,7 +536,7 @@ def inject_styles(theme_name: str) -> None:
             border-color: {t['accent_2']} !important;
             box-shadow: 0 0 0 2px {hex_to_rgba(t['accent_2'], 0.3)} !important;
         }}
-        .nav-item:active, .mobile-tab:active, .nav-btn:active,
+        .nav-item:active, .dm-fab:active, .dm-nav-toggle:active, .nav-btn:active,
         div.stButton > button:active {{ transform: scale(0.97); }}
         .card {{ transition: transform 0.16s ease, box-shadow 0.16s ease; }}
         @media (hover: hover) {{
@@ -608,11 +608,9 @@ def inject_styles(theme_name: str) -> None:
            slot en el flujo vertical (el gap del flex los cuenta aunque midan 0px
            de alto): fuera del flujo con position:absolute. */
         [data-testid="stElementContainer"]:has(.fixed-sidebar),
-        [data-testid="stElementContainer"]:has(.mobile-tabbar),
         [data-testid="stElementContainer"]:has(.dm-style-marker),
         [data-testid="stElementContainer"]:has(> [data-testid="stIFrame"]),
         [data-testid="element-container"]:has(.fixed-sidebar),
-        [data-testid="element-container"]:has(.mobile-tabbar),
         [data-testid="element-container"]:has(.dm-style-marker) {{
             position: absolute;
             width: 0;
@@ -1157,9 +1155,6 @@ def inject_styles(theme_name: str) -> None:
         [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"],
         .stAppDeployButton {{ display: none !important; }}
 
-        /* ── Tab bar inferior — oculta en desktop ──────────────────────── */
-        .mobile-tabbar {{ display: none; }}
-
         /* ── MOBILE ≤ 768px — mobile-first: contenido primero, tacto, densidad ── */
         @media (max-width: 768px) {{
 
@@ -1173,7 +1168,7 @@ def inject_styles(theme_name: str) -> None:
                 padding-left: 1rem !important;
                 padding-right: 1rem !important;
                 padding-top: 4.5rem !important; /* despeja la hamburguesa flotante */
-                padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+                padding-bottom: calc(6rem + env(safe-area-inset-bottom)) !important; /* despeja el FAB */
             }}
 
             /* ── Drawer de navegación: la sidebar se desliza desde la izquierda ── */
@@ -1219,60 +1214,6 @@ def inject_styles(theme_name: str) -> None:
             html.dm-nav-open .dm-nav-scrim {{
                 opacity: 1;
                 pointer-events: auto;
-            }}
-
-            /* ── Tab bar fija en el fondo (objetivos táctiles ≥ 44px) ──── */
-            .mobile-tabbar {{
-                display: flex !important;
-                position: fixed;
-                bottom: 0; left: 0; right: 0;
-                height: 60px;
-                background: {t['panel_bg']};
-                border-top: 1px solid {t['line']};
-                z-index: 9999;
-                padding-bottom: env(safe-area-inset-bottom);
-                box-shadow: 0 -2px 12px rgba(0,0,0,0.08);
-            }}
-            .mobile-tab {{
-                flex: 1;
-                min-width: var(--touch);
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                gap: 0.1rem;
-                text-decoration: none !important;
-                color: {t['muted']} !important;
-                font-size: 0;
-                font-weight: 700;
-                letter-spacing: 0.02em;
-                padding: 0.25rem 0.05rem 0.2rem;
-                border-top: 2px solid transparent;
-                transition: color 0.15s, border-color 0.15s;
-                -webkit-tap-highlight-color: transparent;
-            }}
-            .mobile-tab span {{
-                display: none;
-            }}
-            .mobile-tab svg {{
-                width: 1.3rem; height: 1.3rem;
-                stroke-width: 1.65;
-                flex-shrink: 0;
-            }}
-            .mobile-tab.active {{
-                color: {t['accent']} !important;
-                border-top-color: {t['accent']};
-            }}
-            .mobile-tab.active svg {{
-                stroke-width: 2.1;
-            }}
-            .mobile-tab.active span {{
-                display: block;
-                font-size: 0.55rem;
-                color: {t['accent']} !important;
-            }}
-            .mobile-tab-extra {{
-                flex: 0 0 48px;
             }}
 
             /* ── Columnas: apiladas por defecto; excepciones por contenido ── */
@@ -1376,7 +1317,7 @@ def inject_styles(theme_name: str) -> None:
                 display: flex;
                 position: fixed;
                 right: 1rem;
-                bottom: calc(76px + env(safe-area-inset-bottom));
+                bottom: calc(1.25rem + env(safe-area-inset-bottom));
                 width: 56px; height: 56px;
                 align-items: center; justify-content: center;
                 border: none; border-radius: 50%;
@@ -1725,30 +1666,6 @@ def render_side_nav() -> str:
     </div>
 </div>
 </div>""", unsafe_allow_html=True)
-
-    # Tab bar fija inferior para móvil
-    SHORT_LABELS = {
-        "resumen":       "Resumen",
-        "poblacion":     "Población",
-        "ocupados":      "Ocupados",
-        "desocupados":   "Desocup.",
-        "brechas":       "Brechas",
-        "instrucciones": "Guía",
-        "metodologia":   "Método",
-    }
-    tab_items = "".join(
-        f"<a href='?view={key}&theme={current_theme}' aria-label='{label}'"
-        f" class='mobile-tab{' active' if vista == key else ''}' target='_self'>"
-        f"{icon_svg}<span>{SHORT_LABELS.get(key, label)}</span></a>"
-        for key, label, icon_svg in NAV_ITEMS
-    )
-    st.markdown(
-        f"<nav class='mobile-tabbar' aria-label='Navegación principal'>{tab_items}"
-        f"<a href='?view={vista}&theme={new_theme}' class='mobile-tab mobile-tab-extra' target='_self'"
-        f" title='{theme_title}' aria-label='{theme_title}'>{theme_icon}</a>"
-        f"</nav>",
-        unsafe_allow_html=True,
-    )
 
     return vista
 

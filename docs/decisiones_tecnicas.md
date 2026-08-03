@@ -385,3 +385,9 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 - KPIs en movil con mas respiracion: gap del flex 1rem (cuadricula 8px) y margen inferior de tarjeta, como la referencia del Observatorio.
 
 Verificado con Playwright (390px): abre en left:0 con 304px de ancho, navega a otra vista y queda cerrado; desktop sin cambios.
+
+---
+
+## DT-024 - Eliminacion de la tab bar inferior en movil (2026-08-02)
+
+**Decision:** con el drawer de navegacion (DT-023) operativo, la tab bar inferior se elimina: dos sistemas de navegacion paralelos duplicaban la misma jerarquia (7 vistas) y anadian carga cognitiva. El drawer queda como navegacion unica (hamburguesa flotante siempre visible), el FAB de filtros baja a la esquina inferior derecha (bottom 1.25rem + safe-area) y el padding inferior del contenido se ajusta a 6rem. El toggle de tema sigue disponible en el pie del drawer. Se retiran el markup de la tab bar, sus reglas CSS y sus selectores auxiliares.
