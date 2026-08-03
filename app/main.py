@@ -401,7 +401,7 @@ VIEWS = [key for key, _, _ in NAV_ITEMS]
 # Monograma DM de la marca (gradiente violeta -> azul -> cian)
 LOGO_SVG = (Path(__file__).parent / "assets" / "logo-dm.svg").read_text(encoding="utf-8")
 
-AUTHOR_LINKEDIN = "https://www.linkedin.com/in/daniel-molina-b76a4323b"
+AUTHOR_LINKEDIN = "https://www.linkedin.com/in/danieljmolina"
 AUTHOR_GITHUB = "https://github.com/dmetrics1"
 AUTHOR_PORTFOLIO = "https://danielmolina.dev"
 

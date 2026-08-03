@@ -226,4 +226,4 @@ python src/etl.py
 
 > *"Transformo datos en soluciones, productos y decisiones."*
 
-[LinkedIn](https://www.linkedin.com/in/daniel-molina-b76a4323b) · [GitHub](https://github.com/dmetrics1)
+[LinkedIn](https://www.linkedin.com/in/danieljmolina) · [GitHub](https://github.com/dmetrics1)
