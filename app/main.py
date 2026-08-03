@@ -45,7 +45,7 @@ def _format_map_value(indicador: str, value) -> str:
         return "s/d"
     meta = MAP_INDICATORS.get(indicador, {})
     if meta.get("kind") == "money":
-        return f"${fmt_metric(value)}"
+        return fmt_cop(value)
     if meta.get("kind") == "count":
         return fmt_metric(value)
     if meta.get("suffix") == "%":
@@ -320,6 +320,10 @@ MESES_NOMBRE = {
     7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic",
 }
 MESES_INVERSO = {v: k for k, v in MESES_NOMBRE.items()}
+MESES_FULL = {
+    1: "Enero", 2: "Febrero", 3: "Marzo", 4: "Abril", 5: "Mayo", 6: "Junio",
+    7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
+}
 
 # Alturas estándar para mantener proporciones homogéneas por fila
 H_PAIRED   = 480   # gráficos en columnas de 2 (mismo valor para ambos)
@@ -423,6 +427,9 @@ NAV_ITEMS = [
 ]
 NAV_LABELS = {key: label for key, label, _ in NAV_ITEMS}
 VIEWS = [key for key, _, _ in NAV_ITEMS]
+
+# Monograma DM de la marca (gradiente violeta -> azul -> cian)
+LOGO_SVG = (Path(__file__).parent / "assets" / "logo-dm.svg").read_text(encoding="utf-8")
 
 AUTHOR_LINKEDIN = "https://www.linkedin.com/in/daniel-molina-b76a4323b"
 AUTHOR_GITHUB = "https://github.com/dmetrics1"
@@ -590,9 +597,14 @@ def inject_styles(theme_name: str) -> None:
             background: {sidebar_accent_soft};
             border-radius: 0.55rem;
             display: flex; align-items: center; justify-content: center;
-            color: {t['eyebrow_text']}; font-weight: 800; font-size: 0.88rem;
             border: 1px solid {sidebar_accent_border};
             flex: 0 0 auto;
+        }}
+        .nav-brand-logo svg {{
+            width: 1.55rem;
+            height: auto;
+            display: block;
+            filter: drop-shadow(0 2px 6px rgba(6,182,212,0.25));
         }}
         .nav-brand-text {{
             font-size: 0.83rem;
@@ -1236,6 +1248,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor=t["chart_bg"],
+        separators=",.",
         font=dict(color=t["text"], family="Inter, system-ui, sans-serif", size=12),
         title=dict(
             text=full_title,
@@ -1336,6 +1349,13 @@ def fmt_metric(value) -> str:
     if abs_v >= 1_000:
         return f"{value / 1_000:.1f} K"
     return f"{value:,.0f}"
+
+
+def fmt_cop(value) -> str:
+    """Pesos colombianos con separador de miles estilo es-CO: $1.450.000."""
+    if pd.isna(value) or not value:
+        return "s/d"
+    return "$" + f"{float(value):,.0f}".replace(",", ".")
 
 
 def fmt_delta_html(cur, prev, mode: str = "abs", invert: bool = False) -> str:
@@ -1486,7 +1506,7 @@ def render_side_nav() -> str:
 
     st.markdown(f"""<div class="fixed-sidebar">
 <div class="nav-brand">
-    <div class="nav-brand-logo">DM</div>
+    <div class="nav-brand-logo">{LOGO_SVG}</div>
     <div class="nav-brand-text">
         Mercado Laboral
         <span>GEIH • DANE</span>
@@ -1572,7 +1592,7 @@ def render_controls(df_all):
             st.selectbox("Ubicación", ["Sin filtro"], index=0, disabled=True, key="sel_geo_disabled")
 
     with clear_col:
-        st.markdown("<div style='height:1.62rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:1.75rem'></div>", unsafe_allow_html=True)
         st.button("Limpiar", on_click=reset_filters_cb)
 
     return ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel
@@ -2249,9 +2269,9 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             fmt_delta_html(tasa_inf, prev.get("tasa_informalidad") if prev is not None else None, mode="pct", invert=True),
         )
         render_kpi(
-            cols[3], "Ingreso mediano",
-            f"${fmt_metric(row.get('ingreso_mediano', 0))}" if row.get("ingreso_mediano") else "s/d",
-            "COP corrientes · P6500",
+            cols[3], "Ingreso mediano (COP)",
+            fmt_cop(row.get("ingreso_mediano")),
+            "Pesos colombianos corrientes · P6500",
             fmt_delta_html(row.get("ingreso_mediano"), prev.get("ingreso_mediano") if prev is not None else None),
         )
 
@@ -2461,7 +2481,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             st.plotly_chart(fig, use_container_width=True)
         with right:
             d2 = edu.sort_values("ingreso_mediano")
-            d2["txt"] = d2["ingreso_mediano"].map(lambda x: f"${fmt_metric(x)}")
+            d2["txt"] = d2["ingreso_mediano"].map(fmt_cop)
             fig = px.bar(d2, x="ingreso_mediano", y="P3042_label", orientation="h", text="txt",
                          color_discrete_sequence=[BT_TEAL],
                          labels={"ingreso_mediano": "Ingreso mediano (COP)", "P3042_label": ""})
@@ -2475,7 +2495,7 @@ def view_ocupados(df_context, df_sector, df_sx_age, df_pos, df_city, df_edu, df_
             _smmlv_val  = SMMLV.get(_smmlv_year, SMMLV[max(SMMLV)])
             fig.add_vline(
                 x=_smmlv_val, line_dash="dash", line_color=BT_NAVY, line_width=1.8,
-                annotation_text=f"SMMLV {_smmlv_year}<br>${fmt_metric(_smmlv_val)}",
+                annotation_text=f"SMMLV {_smmlv_year}<br>{fmt_cop(_smmlv_val)}",
                 annotation_position="top right",
                 annotation_font=dict(size=10, color=BT_NAVY),
             )
@@ -2952,7 +2972,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                 fig = fig_base(fig, "Ingreso mediano por sexo", f"Serie mensual · Mujer vs. Hombre{gap_subtitle} · línea = SMMLV")
                 fig.update_traces(
                     line=dict(width=2.5),
-                    hovertemplate="<b>%{fullData.name}</b><br>Ingreso mediano: $%{y:,.0f}<br>%{x|%b %Y}<extra></extra>",
+                    hovertemplate="<b>%{fullData.name}</b><br>Ingreso mediano: $%{y:,.0f} COP<br>%{x|%b %Y}<extra></extra>",
                 )
                 fig.update_xaxes(tickformat="%b %Y", dtick="M3")
                 fig.update_yaxes(tickprefix="$")
@@ -2966,7 +2986,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
                     x=_periodos_smmlv, y=_smmlv_series,
                     name="SMMLV", mode="lines",
                     line=dict(color=BT_NAVY, width=1.5, dash="dot"),
-                    hovertemplate="<b>SMMLV %{x|%Y}</b>: $%{y:,.0f}<extra></extra>",
+                    hovertemplate="<b>SMMLV %{x|%Y}</b>: $%{y:,.0f} COP<extra></extra>",
                 ))
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -3623,7 +3643,8 @@ df_tendencia = active_context_df(_df_nac_tr, _df_dep_tr, _df_city_tr, geo_level,
 
 with title_slot:
     if vista not in ("instrucciones", "metodologia"):
-        render_header(vista, ultimo["periodo"].strftime("%B %Y").capitalize(), context_label)
+        _corte = f"{MESES_FULL[ultimo['periodo'].month]} {ultimo['periodo'].year}"
+        render_header(vista, _corte, context_label)
 
 with body_slot:
     if vista not in ("metodologia", "instrucciones"):
