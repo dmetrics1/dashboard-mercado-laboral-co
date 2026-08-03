@@ -517,6 +517,37 @@ def inject_styles(theme_name: str) -> None:
             --panel-bg: {t['panel_bg']};
             --panel-solid: {t['panel_solid']};
             --input-bg: {t['input_bg']};
+            /* Escala tipográfica fluida (mobile-first, clamp entre 360px y 1440px) */
+            --fs-topbar:  clamp(1.25rem, 0.9rem + 1.5vw, 1.5rem);
+            --fs-section: clamp(1.08rem, 0.9rem + 0.8vw, 1.32rem);
+            --fs-kpi:     clamp(1.55rem, 1rem + 2.4vw, 2.15rem);
+            --fs-kpi-sm:  clamp(1.15rem, 0.95rem + 0.9vw, 1.45rem);
+            --touch: 44px; /* objetivo táctil mínimo (WCAG 2.5.8 / HIG) */
+        }}
+
+        /* ── Interacción táctil y accesibilidad (todos los viewports) ────── */
+        a, button {{ -webkit-tap-highlight-color: transparent; }}
+        .nav-item:focus-visible, .nav-btn:focus-visible, .mobile-tab:focus-visible,
+        div.stButton > button:focus-visible {{
+            outline: 2px solid {t['accent_2']} !important;
+            outline-offset: 2px;
+        }}
+        [data-baseweb="select"]:focus-within > div {{
+            border-color: {t['accent_2']} !important;
+            box-shadow: 0 0 0 2px {hex_to_rgba(t['accent_2'], 0.3)} !important;
+        }}
+        .nav-item:active, .mobile-tab:active, .nav-btn:active,
+        div.stButton > button:active {{ transform: scale(0.97); }}
+        .card {{ transition: transform 0.16s ease, box-shadow 0.16s ease; }}
+        @media (hover: hover) {{
+            .card:hover {{ transform: translateY(-2px); }}
+        }}
+        @media (prefers-reduced-motion: reduce) {{
+            *, *::before, *::after {{
+                transition-duration: 0.01ms !important;
+                animation-duration: 0.01ms !important;
+                transform: none !important;
+            }}
         }}
 
         .stApp {{ background: {t['app_bg']}; }}
@@ -664,7 +695,7 @@ def inject_styles(theme_name: str) -> None:
             display: flex;
             align-items: center;
             gap: 0.72rem;
-            min-height: 2.55rem;
+            min-height: var(--touch);
             padding: 0 0.72rem;
             border-radius: 0.58rem;
             text-decoration: none !important;
@@ -715,7 +746,7 @@ def inject_styles(theme_name: str) -> None:
             padding: 0.12rem;
         }}
         .nav-btn {{
-            height: 2.48rem;
+            height: var(--touch);
             border-radius: 0.58rem;
             border: 1px solid {sidebar_border};
             background: {sidebar_input};
@@ -905,7 +936,7 @@ def inject_styles(theme_name: str) -> None:
         .kpi-value {{
             color: {t['kpi']};
             font-family: "Inter", system-ui, sans-serif;
-            font-size: 2.15rem;
+            font-size: var(--fs-kpi);
             font-weight: 700;
             letter-spacing: -0.015em;
             line-height: 1.0;
@@ -914,7 +945,7 @@ def inject_styles(theme_name: str) -> None:
         .kpi-value-sm {{
             color: {t['kpi']};
             font-family: "Inter", system-ui, sans-serif;
-            font-size: 1.45rem;
+            font-size: var(--fs-kpi-sm);
             font-weight: 600;
             letter-spacing: -0.01em;
             line-height: 1.15;
@@ -949,6 +980,18 @@ def inject_styles(theme_name: str) -> None:
 
         .section-gap {{ height: 0.5rem; }}
         .section-gap-lg {{ height: 1rem; }}
+
+        /* Grids reutilizables para HTML inyectado — responsive por clase,
+           sin depender de selectores de estilo inline (Streamlit los normaliza) */
+        .dm-grid {{ display: grid; gap: 1rem; }}
+        .dm-grid-4 {{ grid-template-columns: repeat(4, 1fr); }}
+        .dm-grid-2 {{ grid-template-columns: 1fr 1fr; }}
+        .filter-btn-spacer {{ height: 1.75rem; }}
+        @media (max-width: 768px) {{
+            .dm-grid-4 {{ grid-template-columns: repeat(2, 1fr); }}
+            .dm-grid-2 {{ grid-template-columns: 1fr; }}
+            .filter-btn-spacer {{ display: none; }}
+        }}
         .section-header {{
             margin: 0.5rem 0;
             border-top: 1px solid {t['line']};
@@ -961,7 +1004,7 @@ def inject_styles(theme_name: str) -> None:
         .section-header-title {{
             color: {t['text']};
             font-family: "Inter", system-ui, sans-serif;
-            font-size: 1.32rem;
+            font-size: var(--fs-section);
             font-weight: 600;
             letter-spacing: -0.012em;
             line-height: 1.15;
@@ -1114,10 +1157,10 @@ def inject_styles(theme_name: str) -> None:
         /* ── Tab bar inferior — oculta en desktop ──────────────────────── */
         .mobile-tabbar {{ display: none; }}
 
-        /* ── MOBILE ≤ 768px ─────────────────────────────────────────────── */
+        /* ── MOBILE ≤ 768px — mobile-first: contenido primero, tacto, densidad ── */
         @media (max-width: 768px) {{
 
-            /* Contenido a ancho completo + espacio para tab bar */
+            /* Contenido a ancho completo + espacio para tab bar y safe-area */
             .block-container,
             [data-testid="stAppViewMainArea"] .block-container,
             [data-testid="stAppViewContainer"] .block-container {{
@@ -1127,18 +1170,18 @@ def inject_styles(theme_name: str) -> None:
                 padding-left: 1rem !important;
                 padding-right: 1rem !important;
                 padding-top: 1rem !important;
-                padding-bottom: 5rem !important;
+                padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
             }}
 
             /* Sidebar fija — oculta */
             .fixed-sidebar {{ display: none !important; }}
 
-            /* ── Tab bar fija en el fondo ─────────────────────────────── */
+            /* ── Tab bar fija en el fondo (objetivos táctiles ≥ 44px) ──── */
             .mobile-tabbar {{
                 display: flex !important;
                 position: fixed;
                 bottom: 0; left: 0; right: 0;
-                height: 56px;
+                height: 60px;
                 background: {t['panel_bg']};
                 border-top: 1px solid {t['line']};
                 z-index: 9999;
@@ -1147,6 +1190,7 @@ def inject_styles(theme_name: str) -> None:
             }}
             .mobile-tab {{
                 flex: 1;
+                min-width: var(--touch);
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -1166,7 +1210,7 @@ def inject_styles(theme_name: str) -> None:
                 display: none;
             }}
             .mobile-tab svg {{
-                width: 1.2rem; height: 1.2rem;
+                width: 1.3rem; height: 1.3rem;
                 stroke-width: 1.65;
                 flex-shrink: 0;
             }}
@@ -1183,40 +1227,50 @@ def inject_styles(theme_name: str) -> None:
                 color: {t['accent']} !important;
             }}
             .mobile-tab-extra {{
-                flex: 0 0 40px;
+                flex: 0 0 48px;
             }}
 
-            /* Columnas de Streamlit apiladas */
-            [data-testid="column"] {{
+            /* ── Columnas: apiladas por defecto; excepciones por contenido ── */
+            [data-testid="stHorizontalBlock"] {{
+                flex-wrap: wrap !important;
+                gap: 0.75rem !important;
+            }}
+            [data-testid="stColumn"] {{
                 width: 100% !important;
                 min-width: 100% !important;
-                flex: none !important;
+                flex: 1 1 100% !important;
+            }}
+            /* KPIs (columna con .card, sin gráfico) → cuadrícula de 2 por fila:
+               densidad de información sin sacrificar legibilidad */
+            [data-testid="stColumn"]:has(.card):not(:has([data-testid="stPlotlyChart"])) {{
+                width: auto !important;
+                min-width: calc(50% - 0.5rem) !important;
+                flex: 1 1 calc(50% - 0.5rem) !important;
+            }}
+            /* Filtros: selects a 2 por fila y botón Limpiar a ancho completo.
+               Reduce el bloque de filtros a menos de la mitad de altura para
+               que los KPIs entren en la primera pantalla (content first). */
+            .st-key-hero_filters_card [data-testid="stColumn"]:has([data-testid="stSelectbox"]) {{
+                width: auto !important;
+                min-width: calc(50% - 0.5rem) !important;
+                flex: 1 1 calc(50% - 0.5rem) !important;
+            }}
+            .st-key-hero_filters_card div.stButton > button {{
+                height: var(--touch) !important;
+            }}
+            /* Panel de indicador ANTES del mapa: primero eliges, luego ves */
+            [data-testid="stColumn"]:has(.map-control-title) {{ order: -1; }}
+
+            /* Tablas HTML de documentos: scroll interno, nunca desbordar página */
+            [data-testid="stMarkdownContainer"] table {{
+                display: block;
+                overflow-x: auto;
             }}
 
-            /* Grids CSS dentro de HTML inyectado */
-            div[style*="grid-template-columns:repeat(4,1fr)"] {{
-                grid-template-columns: repeat(2, 1fr) !important;
-            }}
-            div[style*="grid-template-columns:repeat(2,1fr)"] {{
-                grid-template-columns: 1fr !important;
-            }}
-            div[style*="grid-template-columns:1fr 1fr"] {{
-                grid-template-columns: 1fr !important;
-            }}
-            div[style*="grid-template-columns:repeat(4, 1fr)"] {{
-                grid-template-columns: repeat(2, 1fr) !important;
-            }}
-
-            /* Tipografía reducida */
-            .kpi-value            {{ font-size: 1.65rem !important; }}
+            /* Tipografía secundaria compacta (la primaria ya es fluida via clamp) */
             .kpi-label            {{ font-size: 0.65rem !important; }}
-            .section-header-title {{ font-size: 1.05rem !important; }}
-            .topbar-title         {{ font-size: 1.25rem !important; }}
             .topbar-sub           {{ font-size: 0.78rem !important; }}
             .interpretation-text  {{ font-size: 0.86rem !important; }}
-
-            /* Mapas — panel de control va debajo del mapa */
-            [data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; }}
         }}
         </style>
         <div class="dm-style-marker"></div>
@@ -1480,7 +1534,7 @@ def render_header(view_key: str, ultimo_txt: str, context_label: str):
     label = NAV_LABELS.get(view_key, view_key.capitalize())
     st.markdown(
         f"""<div>
-<div class='topbar-title' style="font-size: 1.5rem; margin-bottom: 0.25rem;">{label}</div>
+<div class='topbar-title' style="font-size: var(--fs-topbar); margin-bottom: 0.25rem;">{label}</div>
 <div class='topbar-sub'>
 Mercado laboral colombiano · GEIH DANE &nbsp;|&nbsp; Corte: {ultimo_txt}
 &nbsp;|&nbsp; Contexto: <strong>{context_label}</strong>
@@ -1527,9 +1581,9 @@ def render_side_nav() -> str:
 </div>
 <div class="nav-footer">
     <div class="nav-footer-btns">
-        <a href="{AUTHOR_LINKEDIN}" class="nav-btn" target="_blank" title="LinkedIn">{ICON_LINKEDIN}</a>
-        <a href="{AUTHOR_GITHUB}" class="nav-btn" target="_blank" title="GitHub">{ICON_GITHUB}</a>
-        <a href="?view={vista}&theme={new_theme}" class="nav-btn" target="_self" title="{theme_title}">{theme_icon}</a>
+        <a href="{AUTHOR_LINKEDIN}" class="nav-btn" target="_blank" title="LinkedIn" aria-label="Perfil de LinkedIn">{ICON_LINKEDIN}</a>
+        <a href="{AUTHOR_GITHUB}" class="nav-btn" target="_blank" title="GitHub" aria-label="Repositorio en GitHub">{ICON_GITHUB}</a>
+        <a href="?view={vista}&theme={new_theme}" class="nav-btn" target="_self" title="{theme_title}" aria-label="{theme_title}">{theme_icon}</a>
     </div>
 </div>
 </div>""", unsafe_allow_html=True)
@@ -1545,14 +1599,16 @@ def render_side_nav() -> str:
         "metodologia":   "Método",
     }
     tab_items = "".join(
-        f"<a href='?view={key}&theme={current_theme}' class='mobile-tab{' active' if vista == key else ''}' target='_self'>"
+        f"<a href='?view={key}&theme={current_theme}' aria-label='{label}'"
+        f" class='mobile-tab{' active' if vista == key else ''}' target='_self'>"
         f"{icon_svg}<span>{SHORT_LABELS.get(key, label)}</span></a>"
         for key, label, icon_svg in NAV_ITEMS
     )
     st.markdown(
-        f"<div class='mobile-tabbar'>{tab_items}"
-        f"<a href='?view={vista}&theme={new_theme}' class='mobile-tab mobile-tab-extra' target='_self' title='{theme_title}'>{theme_icon}</a>"
-        f"</div>",
+        f"<nav class='mobile-tabbar' aria-label='Navegación principal'>{tab_items}"
+        f"<a href='?view={vista}&theme={new_theme}' class='mobile-tab mobile-tab-extra' target='_self'"
+        f" title='{theme_title}' aria-label='{theme_title}'>{theme_icon}</a>"
+        f"</nav>",
         unsafe_allow_html=True,
     )
 
@@ -1601,7 +1657,7 @@ def render_controls(df_all):
             st.selectbox("Ubicación", ["Sin filtro"], index=0, disabled=True, key="sel_geo_disabled")
 
     with clear_col:
-        st.markdown("<div style='height:1.75rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div class='filter-btn-spacer'></div>", unsafe_allow_html=True)
         st.button("Limpiar", on_click=reset_filters_cb)
 
     return ano_ui, anos_sel, mes_ui, meses_sel, geo_level, geo_sel
@@ -2837,7 +2893,7 @@ def view_brechas(df_sexo, df_edad_brecha, df_dep, df_dep_mapa, df_nac, geo_level
     _v_inf = f"{inf_gap:+.1f} pp" if inf_gap is not None and not pd.isna(inf_gap) else "s/d"
     _v_ing = f"{ing_gap:+.1f}%"   if ing_gap is not None and not pd.isna(ing_gap) else "s/d"
     st.markdown(
-        f"""<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:0.5rem;'>
+        f"""<div class='dm-grid dm-grid-4' style='margin-bottom:0.5rem;'>
   <div class='card' style='text-align:center; min-height:100px; display:flex; flex-direction:column; justify-content:center; align-items:center;'>
     <div class='kpi-label'>BRECHA TD (M−H)</div>
     <div class='kpi-value'>{_v_td}</div>
@@ -3174,7 +3230,7 @@ def _render_guide_doc(t):
 
     sec1 = (
         h2("1 &middot; Navegación y filtros")
-        + "<div style='display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:0.5rem;'>"
+        + "<div class='dm-grid dm-grid-2' style='margin-bottom:0.5rem;'>"
         + "<div>"
         + f"<p style='font-weight:700;color:{BT_DEEP};font-size:0.85rem;letter-spacing:0.06em;"
         f"text-transform:uppercase;margin:0 0 0.4rem;'>Filtros globales</p>"
@@ -3337,7 +3393,7 @@ def _render_guide_doc(t):
 
     sec4 = (
         h2("4 &middot; Rutas de lectura por perfil")
-        + "<div style='display:grid;grid-template-columns:1fr 1fr;gap:0 2rem;'>"
+        + "<div class='dm-grid dm-grid-2' style='gap:0 2rem;'>"
         + rutas_html
         + "</div>"
     )
@@ -3437,7 +3493,7 @@ def view_metodologia(df):
 
     # ── Sección 1: Parámetros ─────────────────────────────────────────────────
     params_grid = (
-        "<div style='display:grid; grid-template-columns:repeat(4,1fr); gap:0.85rem; margin-bottom:0.5rem;'>"
+        "<div class='dm-grid dm-grid-4' style='margin-bottom:0.5rem;'>"
         + param_card("Fuente", "DANE GEIH", "Encuesta rediseñada (2022). Bases anuales consolidadas.")
         + param_card("Marco muestral", "Probabilístico", "Multietápico, estratificado, por conglomerados. 23 áreas metropolitanas.")
         + param_card("Precisión", "CV &lt; 5%", "Indicadores publicados solo para niveles con suficiencia muestral.")
@@ -3459,7 +3515,7 @@ def view_metodologia(df):
     defs_right = "".join(def_block(*d) for d in defs_data[3:])
     sec3 = (
         h2("3 · Definiciones operativas (OIT / DANE)")
-        + "<div style='display:grid; grid-template-columns:1fr 1fr; gap:1rem;'>"
+        + "<div class='dm-grid dm-grid-2'>"
         + f"<div>{defs_left}</div><div>{defs_right}</div></div>"
     )
 

@@ -328,3 +328,24 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 **Alineacion de documentos:** las vistas Guia y Metodologia dejan de centrar su contenido (`margin: 0 auto` -> `margin: 0`); conservan `max-width: 960px` solo por legibilidad, arrancando en el mismo eje izquierdo que las tarjetas del resto de vistas.
 
 **Verificacion:** medicion programatica (Playwright) del primer elemento de cada vista: las 7 vistas inician en el mismo punto `[x=280, y=16]` con sidebar en `[16, 16]` a 1600px de viewport.
+
+---
+
+## DT-021 - Experiencia movil mobile-first (2026-08-02)
+
+**Decision:** redisenar la capa responsive como experiencia mobile-first, con diagnostico y auditoria medidos programaticamente (Playwright a 360/390/768/1440 px).
+
+**Diagnostico inicial (390px):** el bloque de filtros media 543px y el primer KPI empezaba en y=591 (primera pantalla sin datos); la vista Metodologia tenia 18 elementos con desbordamiento horizontal; objetivos tactiles < 44px; sin focus-visible ni prefers-reduced-motion.
+
+**Cambios:**
+
+- **Tipografia fluida:** escala con `clamp()` en tokens (`--fs-topbar`, `--fs-section`, `--fs-kpi`, `--fs-kpi-sm`) en lugar de overrides por breakpoint.
+- **Content first en movil:** filtros en cuadricula 2x2 (selects a 2 por fila via `:has(stSelectbox)`), spacer del boton oculto (clase `.filter-btn-spacer`), boton Limpiar con altura tactil. Resultado: bloque de filtros 543px -> 348px y KPIs visibles en la primera pantalla.
+- **Densidad de KPIs:** columnas con `.card` (sin grafico) a 2 por fila via `:has()`; graficos y mapas siempre a ancho completo.
+- **Flujo de mapas:** el panel de indicador se ordena ANTES del mapa en movil (`order:-1` sobre la columna con `.map-control-title`): primero eliges, luego ves.
+- **Grids de documentos:** clases `.dm-grid/.dm-grid-4/.dm-grid-2` reemplazan los selectores `[style*=...]` (Streamlit normaliza los atributos style y los volvia inertes — causa raiz del desborde en Metodologia). Tablas HTML con scroll interno (`stMarkdownContainer table { display:block; overflow-x:auto }`).
+- **Tacto y accesibilidad (WCAG 2.2 AA):** token `--touch: 44px` aplicado a nav, botones y tab bar; `aria-label` en todos los enlaces de icono; tab bar como `<nav aria-label>`; `:focus-visible` con anillo cian en nav/botones/selects; `prefers-reduced-motion` respetado; safe-area (`env(safe-area-inset-bottom)`) en tab bar y padding inferior.
+- **Microinteracciones:** `:active` scale 0.97 en elementos tactiles, hover lift de tarjetas solo en `@media (hover:hover)`.
+- **Nota tecnica:** el testid de columnas en Streamlit 1.56 es `stColumn` (no `column`); el apilado previo funcionaba solo por el CSS nativo de Streamlit.
+
+**Auditoria final:** 390px sin desbordamiento (0 elementos), Metodologia 18 -> 0 desbordes, KPIs en 2x2, desktop sin regresiones (4 KPIs en fila, hero 179px, sidebar intacta), 25 tests y ruff en verde.
