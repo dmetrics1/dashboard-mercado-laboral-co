@@ -371,3 +371,17 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 - Ticks del eje X responsivos: se elimina `dtick="M3"` fijo en las series; Plotly densifica segun el ancho real (en movil ~1 tick por anio, en desktop semestral). `dtick="M1"` se conserva solo con un anio especifico seleccionado.
 - Fix a11y critico: la regla de `prefers-reduced-motion` anulaba `transform` y habria dejado el sheet siempre visible; ahora solo neutraliza duraciones.
 - Sin hueco residual en la tarjeta de titulo (gap 0 del bloque en movil).
+
+---
+
+## DT-023 - Drawer de navegacion movil y aire entre KPIs (2026-08-02)
+
+**Decision:** en movil la sidebar (ya existente, con marca y pildora activa) se convierte en drawer deslizante desde la izquierda, accionado por una hamburguesa flotante — mismo patron visual del Observatorio GEIH en Shiny, para coherencia entre productos DM.
+
+- Hamburguesa fija arriba-izquierda (48px, panel_solid) + scrim propio (.dm-nav-scrim); el contenido movil recibe padding-top 4.5rem para despejarla.
+- El drawer reutiliza `.fixed-sidebar` con `translateX(-110%)` cerrado / `translateX(0)` abierto (clase `dm-nav-open` en <html>), radio 0 22px 22px 0, `100dvh` y safe-area-inset-top.
+- Mismo mecanismo robusto del bottom sheet (DT-022): listener delegado unico en document, cierre por scrim y Escape; navegar recarga la pagina y el drawer se cierra solo (el <html> se recrea).
+- Coexiste con la tab bar inferior: tab bar = cambio rapido de vista con un toque; drawer = menu completo etiquetado + marca + LinkedIn/GitHub/tema.
+- KPIs en movil con mas respiracion: gap del flex 1rem (cuadricula 8px) y margen inferior de tarjeta, como la referencia del Observatorio.
+
+Verificado con Playwright (390px): abre en left:0 con 304px de ancho, navega a otra vista y queda cerrado; desktop sin cambios.

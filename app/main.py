@@ -988,8 +988,8 @@ def inject_styles(theme_name: str) -> None:
         .dm-grid-4 {{ grid-template-columns: repeat(4, 1fr); }}
         .dm-grid-2 {{ grid-template-columns: 1fr 1fr; }}
         .filter-btn-spacer {{ height: 1.75rem; }}
-        /* FAB y scrim del bottom sheet: solo existen en móvil */
-        .dm-fab, .dm-sheet-scrim {{ display: none; }}
+        /* FAB, hamburguesa y scrims: solo existen en móvil */
+        .dm-fab, .dm-sheet-scrim, .dm-nav-toggle, .dm-nav-scrim {{ display: none; }}
         @media (max-width: 768px) {{
             .dm-grid-4 {{ grid-template-columns: repeat(2, 1fr); }}
             .dm-grid-2 {{ grid-template-columns: 1fr; }}
@@ -1172,12 +1172,54 @@ def inject_styles(theme_name: str) -> None:
                 margin-left: 0 !important;
                 padding-left: 1rem !important;
                 padding-right: 1rem !important;
-                padding-top: 1rem !important;
+                padding-top: 4.5rem !important; /* despeja la hamburguesa flotante */
                 padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
             }}
 
-            /* Sidebar fija — oculta */
-            .fixed-sidebar {{ display: none !important; }}
+            /* ── Drawer de navegación: la sidebar se desliza desde la izquierda ── */
+            .dm-nav-toggle {{
+                display: flex;
+                position: fixed;
+                top: 0.75rem; left: 1rem;
+                width: 48px; height: 48px;
+                align-items: center; justify-content: center;
+                border: 1px solid {sidebar_border};
+                border-radius: 12px;
+                background: {t['panel_solid']};
+                color: {t['eyebrow_text']};
+                box-shadow: {chrome_shadow};
+                z-index: 9998;
+                cursor: pointer;
+            }}
+            .dm-nav-toggle svg {{ width: 22px; height: 22px; }}
+            .fixed-sidebar {{
+                display: flex !important;
+                top: 0 !important; left: 0 !important; bottom: 0 !important;
+                height: 100dvh !important;
+                width: min(19rem, 84vw) !important;
+                border-radius: 0 22px 22px 0 !important;
+                transform: translateX(-110%);
+                transition: transform 0.3s cubic-bezier(0.32, 0.72, 0.35, 1);
+                z-index: 10005 !important;
+                padding-top: calc(1rem + env(safe-area-inset-top)) !important;
+            }}
+            html.dm-nav-open .fixed-sidebar {{
+                transform: translateX(0);
+                box-shadow: 0 0 60px rgba(0, 0, 0, 0.65) !important;
+            }}
+            .dm-nav-scrim {{
+                display: block;
+                position: fixed; inset: 0;
+                background: rgba(2, 6, 16, 0.60);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+                z-index: 10004;
+            }}
+            html.dm-nav-open .dm-nav-scrim {{
+                opacity: 1;
+                pointer-events: auto;
+            }}
 
             /* ── Tab bar fija en el fondo (objetivos táctiles ≥ 44px) ──── */
             .mobile-tabbar {{
@@ -1236,7 +1278,11 @@ def inject_styles(theme_name: str) -> None:
             /* ── Columnas: apiladas por defecto; excepciones por contenido ── */
             [data-testid="stHorizontalBlock"] {{
                 flex-wrap: wrap !important;
-                gap: 0.75rem !important;
+                gap: 1rem !important;
+            }}
+            /* aire entre tarjetas KPI (respiración como en la referencia) */
+            [data-testid="stColumn"] .card {{
+                margin-bottom: 0.25rem;
             }}
             [data-testid="stColumn"] {{
                 width: 100% !important;
@@ -1649,6 +1695,15 @@ def render_side_nav() -> str:
     new_theme = "Light" if is_dark else "Dark"
     theme_icon = ICON_SUN if is_dark else ICON_MOON
     theme_title = "Modo claro" if is_dark else "Modo oscuro"
+
+    # Hamburguesa + scrim del drawer de navegación (solo visibles en móvil)
+    _icon_menu = _I + '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>'
+    st.markdown(
+        f"<button class='dm-nav-toggle' aria-label='Abrir menú de navegación'"
+        f" aria-haspopup='menu'>{_icon_menu}</button>"
+        f"<div class='dm-nav-scrim' aria-hidden='true'></div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown(f"""<div class="fixed-sidebar">
 <div class="nav-brand">
@@ -3746,11 +3801,16 @@ components.html(
                 doc.documentElement.classList.toggle("dm-filters-open");
             } else if (e.target.closest(".dm-sheet-scrim")) {
                 doc.documentElement.classList.remove("dm-filters-open");
+            } else if (e.target.closest(".dm-nav-toggle")) {
+                doc.documentElement.classList.toggle("dm-nav-open");
+            } else if (e.target.closest(".dm-nav-scrim")) {
+                doc.documentElement.classList.remove("dm-nav-open");
             }
         });
         doc.addEventListener("keydown", (e) => {
             if (e.key === "Escape") {
                 doc.documentElement.classList.remove("dm-filters-open");
+                doc.documentElement.classList.remove("dm-nav-open");
             }
         });
     }
