@@ -391,3 +391,18 @@ Verificado con Playwright (390px): abre en left:0 con 304px de ancho, navega a o
 ## DT-024 - Eliminacion de la tab bar inferior en movil (2026-08-02)
 
 **Decision:** con el drawer de navegacion (DT-023) operativo, la tab bar inferior se elimina: dos sistemas de navegacion paralelos duplicaban la misma jerarquia (7 vistas) y anadian carga cognitiva. El drawer queda como navegacion unica (hamburguesa flotante siempre visible), el FAB de filtros baja a la esquina inferior derecha (bottom 1.25rem + safe-area) y el padding inferior del contenido se ajusta a 6rem. El toggle de tema sigue disponible en el pie del drawer. Se retiran el markup de la tab bar, sus reglas CSS y sus selectores auxiliares.
+
+---
+
+## DT-025 - Alineacion tipografica al sistema de diseno formal (2026-08-02)
+
+**Decision:** adoptar la tipografia del sistema `dm-design-system` (tokens.json > typography): titulos en **Space Grotesk 600/700** (puente gratuito hacia Aeonik), cuerpo en **Inter 400/500**, y numeros de KPI / tablas / codigos de variable en **JetBrains Mono** con `font-variant-numeric: tabular-nums`.
+
+**Aplicacion:**
+
+- Tokens CSS `--font-heading` y `--font-mono`; import de Google Fonts ampliado.
+- Heading: `.topbar-title`, `.section-header-title`, `.interpretation-title`, `.display-serif`, encabezados h2 y titulos de los documentos Guia/Metodologia, y titulos de graficos Plotly (family en `fig_base`).
+- Mono: `.kpi-value`, `.kpi-value-sm`, `.mini-value`, `.map-extreme-value`, valores de `param_card`, codigos de indicador (`TD`, `PET`...) en Guia/Metodologia, pills de formula y columna de variables de la tabla de trazabilidad (antes `monospace` generico).
+- `render_kpi` agrega la clase `kpi-value--long` cuando el valor supera 8 caracteres; en movil baja un paso de la escala fluida — evita que `$1.500.000` (mas ancho en mono) se parta dentro de la tarjeta.
+
+Verificado en dark/light y 390/1440 px; 25 tests y ruff en verde. Pendiente del sistema formal: consumir `dist/tokens.py` en lugar del dict `THEMES` hardcodeado.

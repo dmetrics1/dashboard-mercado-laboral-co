@@ -493,14 +493,14 @@ def inject_styles(theme_name: str) -> None:
     st.markdown(
         f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
         html, body, [class*="css"] {{
             font-family: "Inter", system-ui, -apple-system, sans-serif;
             color: {t['text']};
         }}
         .display-serif {{
-            font-family: "Inter", system-ui, sans-serif !important;
+            font-family: var(--font-heading) !important;
             letter-spacing: -0.01em;
         }}
         body, .stApp, p, span, div, label {{
@@ -523,6 +523,10 @@ def inject_styles(theme_name: str) -> None:
             --fs-kpi:     clamp(1.55rem, 1rem + 2.4vw, 2.15rem);
             --fs-kpi-sm:  clamp(1.15rem, 0.95rem + 0.9vw, 1.45rem);
             --touch: 44px; /* objetivo táctil mínimo (WCAG 2.5.8 / HIG) */
+            /* Tipografía del sistema DM: títulos Space Grotesk (puente a Aeonik),
+               cuerpo Inter, números/código JetBrains Mono con tabular-nums */
+            --font-heading: "Space Grotesk", "Aeonik", "Inter", system-ui, sans-serif;
+            --font-mono: "JetBrains Mono", ui-monospace, monospace;
         }}
 
         /* ── Interacción táctil y accesibilidad (todos los viewports) ────── */
@@ -769,7 +773,7 @@ def inject_styles(theme_name: str) -> None:
 
         .topbar-title {{
             color: {t['text']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-heading);
             font-weight: 600;
             letter-spacing: -0.018em;
             line-height: 1.05;
@@ -910,6 +914,8 @@ def inject_styles(theme_name: str) -> None:
         }}
         .map-extreme-value {{
             color: {t['text']};
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
             font-size: 1.28rem;
             font-weight: 850;
             line-height: 1.05;
@@ -934,7 +940,8 @@ def inject_styles(theme_name: str) -> None:
         }}
         .kpi-value {{
             color: {t['kpi']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
             font-size: var(--fs-kpi);
             font-weight: 700;
             letter-spacing: -0.015em;
@@ -943,7 +950,8 @@ def inject_styles(theme_name: str) -> None:
         }}
         .kpi-value-sm {{
             color: {t['kpi']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
             font-size: var(--fs-kpi-sm);
             font-weight: 600;
             letter-spacing: -0.01em;
@@ -952,7 +960,8 @@ def inject_styles(theme_name: str) -> None:
         }}
         .mini-value {{
             color: {t['kpi']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
             font-size: 1.55rem;
             font-weight: 700;
             letter-spacing: -0.012em;
@@ -1004,7 +1013,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .section-header-title {{
             color: {t['text']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-heading);
             font-size: var(--fs-section);
             font-weight: 600;
             letter-spacing: -0.012em;
@@ -1042,7 +1051,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .interpretation-title {{
             color: {t['text']};
-            font-family: "Inter", system-ui, sans-serif;
+            font-family: var(--font-heading);
             font-size: 1rem;
             font-weight: 600;
             letter-spacing: -0.005em;
@@ -1258,6 +1267,7 @@ def inject_styles(theme_name: str) -> None:
             }}
 
             /* Tipografía secundaria compacta (la primaria ya es fluida via clamp) */
+            .kpi-value--long      {{ font-size: var(--fs-kpi-sm); }}
             .kpi-label            {{ font-size: 0.65rem !important; }}
             .topbar-sub           {{ font-size: 0.78rem !important; }}
             .interpretation-text  {{ font-size: 0.86rem !important; }}
@@ -1385,7 +1395,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
         font=dict(color=t["text"], family="Inter, system-ui, sans-serif", size=12),
         title=dict(
             text=full_title,
-            font=dict(color=t["text"], size=13, weight=600),
+            font=dict(color=t["text"], size=13, weight=600, family="Space Grotesk, Inter, sans-serif"),
             x=0.0,
             xanchor="left",
             pad=dict(l=4),
@@ -1569,11 +1579,14 @@ def active_context_label(geo_level, geo_sel):
 # Componentes UI
 # ---------------------------------------------------------------------------
 def render_kpi(col, label: str, value: str, foot: str = "", delta_html: str = ""):
+    # Valores largos (p. ej. $1.500.000) bajan un paso en la escala para no
+    # partirse dentro de la tarjeta en pantallas angostas.
+    value_cls = "kpi-value kpi-value--long" if len(str(value)) > 8 else "kpi-value"
     with col:
         st.markdown(
             f"""<div class='card' style='text-align:center'>
 <div class='kpi-label' style='text-align:center'>{label}</div>
-<div class='kpi-value' style='text-align:center'>{value}</div>
+<div class='{value_cls}' style='text-align:center'>{value}</div>
 </div>""",
             unsafe_allow_html=True,
         )
@@ -3222,7 +3235,7 @@ def _render_guide_doc(t):
     # ── helpers ───────────────────────────────────────────────────────────────
     def h2(txt):
         return (
-            f"<h2 style='font-family:\"Inter\",system-ui,sans-serif;font-size:1.32rem;"
+            f"<h2 style='font-family:var(--font-heading);font-size:1.32rem;"
             f"font-weight:700;color:{BT_DEEP};margin:2.4rem 0 0.7rem;padding-bottom:0.4rem;"
             f"border-bottom:2px solid {LN};'>{txt}</h2>"
         )
@@ -3238,7 +3251,7 @@ def _render_guide_doc(t):
         return (
             f"<code style='background:{color}18;color:{color};border:1px solid {color}44;"
             f"padding:0.1rem 0.45rem;border-radius:4px;font-size:0.78rem;"
-            f"font-family:monospace;'>{txt}</code>"
+            f"font-family:var(--font-mono);'>{txt}</code>"
         )
 
     def ind_block(code, name, formula, color, qm, ref, comb, trap):
@@ -3259,7 +3272,7 @@ def _render_guide_doc(t):
             f"margin-bottom:1.5rem;background:{PB};border-radius:0 8px 8px 0;"
             f"border:1px solid {LN};border-left-width:4px;'>"
             f"<div style='display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.5rem;flex-wrap:wrap;'>"
-            f"<span style='font-family:\"Inter\",system-ui,sans-serif;font-size:1.45rem;"
+            f"<span style='font-family:var(--font-mono);font-size:1.45rem;"
             f"font-weight:700;color:{color};line-height:1;'>{code}</span>"
             f"<span style='font-weight:700;color:{TX};font-size:0.92rem;'>&mdash;&nbsp;{name}</span>"
             f"<span style='margin-left:auto;'>{pill(formula, color)}</span>"
@@ -3295,7 +3308,7 @@ def _render_guide_doc(t):
     # ── contenido ─────────────────────────────────────────────────────────────
     header = (
         f"<div style='margin-bottom:2rem;padding-bottom:1.1rem;border-bottom:3px solid {BT_DEEP};'>"
-        f"<div style='font-family:\"Inter\",system-ui,sans-serif;font-size:2rem;font-weight:700;"
+        f"<div style='font-family:var(--font-heading);font-size:2rem;font-weight:700;"
         f"color:{BT_DEEP};margin-bottom:0.35rem;'>Cómo leer este tablero</div>"
         f"<div style='color:{MU};font-size:0.97rem;max-width:680px;line-height:1.6;'>"
         f"Guía completa de indicadores, brechas y navegación &mdash; para que cualquier lector "
@@ -3511,7 +3524,7 @@ def view_metodologia(df):
 
     def h2(txt):
         return (
-            f"<h2 style='font-family:Inter,sans-serif; font-size:1.25rem; font-weight:700; "
+            f"<h2 style='font-family:var(--font-heading); font-size:1.25rem; font-weight:700; "
             f"color:{BT_DEEP}; margin:2rem 0 0.6rem; padding-bottom:0.35rem; "
             f"border-bottom:2px solid {LN};'>{txt}</h2>"
         )
@@ -3522,7 +3535,7 @@ def view_metodologia(df):
             f"padding:1rem 1.1rem; display:flex; flex-direction:column; gap:0.25rem;'>"
             f"<div style='font-size:0.72rem; font-weight:700; letter-spacing:.06em; "
             f"text-transform:uppercase; color:{MU};'>{label}</div>"
-            f"<div style='font-family:Inter,sans-serif; font-size:1.4rem; font-weight:700; "
+            f"<div style='font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-size:1.4rem; font-weight:700; "
             f"color:{BT_DEEP};'>{val}</div>"
             f"<div style='font-size:0.82rem; color:{SF}; line-height:1.45;'>{foot}</div>"
             f"</div>"
@@ -3533,7 +3546,7 @@ def view_metodologia(df):
             f"<div style='border-left:4px solid {color}; padding:0.65rem 0.9rem; "
             f"background:{IB}; border-radius:0 8px 8px 0; margin-bottom:0.55rem;'>"
             f"<div style='display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.2rem;'>"
-            f"<span style='font-family:Inter,sans-serif; font-size:1.15rem; font-weight:700; "
+            f"<span style='font-family:var(--font-mono); font-size:1.15rem; font-weight:700; "
             f"color:{color};'>{code}</span>"
             f"<span style='font-size:0.9rem; font-weight:700; color:{TX};'>{name}</span>"
             f"</div>"
@@ -3546,7 +3559,7 @@ def view_metodologia(df):
         return (
             f"<tr style='{border}'>"
             f"<td style='padding:0.45rem 0.65rem; font-weight:700; color:{TX}; white-space:nowrap;'>{ind}</td>"
-            f"<td style='padding:0.45rem 0.65rem; font-family:monospace; font-size:0.83rem; color:{BT_TEAL};'>{vars_}</td>"
+            f"<td style='padding:0.45rem 0.65rem; font-family:var(--font-mono); font-size:0.83rem; color:{BT_TEAL};'>{vars_}</td>"
             f"<td style='padding:0.45rem 0.65rem; color:{SF}; font-size:0.86rem;'>{calc}</td>"
             f"</tr>"
         )
@@ -3557,7 +3570,7 @@ def view_metodologia(df):
     # ── Encabezado ────────────────────────────────────────────────────────────
     header = (
         f"<div style='border-bottom:3px solid {BT_DEEP}; padding-bottom:1rem; margin-bottom:0.25rem;'>"
-        f"<div style='font-family:Inter,sans-serif; font-size:2rem; font-weight:800; color:{BT_DEEP}; "
+        f"<div style='font-family:var(--font-heading); font-size:2rem; font-weight:700; color:{BT_DEEP}; "
         f"line-height:1.15; margin-bottom:0.4rem;'>Ficha técnica · Metodología</div>"
         f"<div style='font-size:0.97rem; color:{SF}; max-width:72ch; line-height:1.6;'>"
         f"Procesamiento de microdatos de la <b>Gran Encuesta Integrada de Hogares (GEIH)</b> "
