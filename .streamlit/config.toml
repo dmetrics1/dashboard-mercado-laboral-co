@@ -5,10 +5,12 @@ enableCORS = false
 [browser]
 gatherUsageStats = false
 
+# [theme] espejo de dm-design-system/dist/streamlit_light.toml (DT-026).
+# Regenerar alla con build/build.py y copiar aqui; no editar valores a mano.
 [theme]
 base = "light"
-primaryColor    = "#2563EB"
+primaryColor = "#0891B2"
 backgroundColor = "#F3F6FB"
-secondaryBackgroundColor = "#FFFFFF"
-textColor       = "#0B1220"
-font            = "sans serif"
+secondaryBackgroundColor = "#F8FAFC"
+textColor = "#1E293B"
+font = "sans serif"

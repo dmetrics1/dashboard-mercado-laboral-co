@@ -16,6 +16,7 @@ from plotly.subplots import make_subplots
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src import dm_tokens as dm
 from src.config import INDICADORES_PATH
 
 st.set_page_config(
@@ -251,66 +252,43 @@ def render_interpretation(text: str, title: str = "Lectura"):
 # ---------------------------------------------------------------------------
 # Paleta y temas
 # ---------------------------------------------------------------------------
-# Identidad "Premium Dark Tech" — Marca personal Daniel Molina.
-# Tokens espejo de personal_landing/colores_paleta.md y shiny-app/www/brand.css.
-THEMES = {
-    "Dark": {
-        "accent": "#2563EB",
-        "accent_2": "#06B6D4",
-        "accent_3": "#F59E0B",
-        "positive": "#10B981",
-        "negative": "#F43F5E",
-        "text": "#F9FAFB",
-        "muted": "#9CA3AF",
-        "line": "rgba(255,255,255,0.06)",
-        "app_bg": "#0A0E1A",
-        "sidebar_bg": "#0F1729",
-        "panel_bg": "#131C31",
-        "panel_solid": "#18233C",
-        "soft_text": "#E5E7EB",
-        "eyebrow_bg": "rgba(6,182,212,0.15)",
-        "eyebrow_text": "#06B6D4",
-        "input_bg": "rgba(24,35,60,0.55)",
-        "chart_grid": "rgba(255,255,255,0.06)",
-        "chart_bg": "rgba(0,0,0,0)",
-        "kpi": "#06B6D4",
-        # Tintas legibles sobre fondo oscuro para textos/acentos de documentos
-        "ink": {
-            "navy": "#60A5FA", "deep": "#38BDF8", "blue": "#4F8DF9",
-            "teal": "#06B6D4", "mint": "#22D3EE", "pale": "#67E8F9",
-        },
-    },
-    # Variante clara derivada de la misma paleta (superficies frías azul-blanco)
-    "Light": {
-        "accent": "#2563EB",
-        "accent_2": "#0891B2",
-        "accent_3": "#D97706",
-        "positive": "#059669",
-        "negative": "#E11D48",
-        "text": "#0B1220",
-        "muted": "#64748B",
-        "line": "rgba(15,23,42,0.10)",
-        "app_bg": "#F3F6FB",
-        "sidebar_bg": "#FFFFFF",
-        "panel_bg": "#FFFFFF",
-        "panel_solid": "#F8FAFC",
-        "soft_text": "#1E293B",
-        "eyebrow_bg": "rgba(37,99,235,0.08)",
-        "eyebrow_text": "#1E40AF",
-        "input_bg": "rgba(37,99,235,0.05)",
-        "chart_grid": "rgba(15,23,42,0.08)",
-        "chart_bg": "rgba(0,0,0,0)",
-        "kpi": "#1D4ED8",
-        # Tintas legibles sobre fondo claro para textos/acentos de documentos
-        "ink": {
-            "navy": "#1E40AF", "deep": "#1D4ED8", "blue": "#2563EB",
-            "teal": "#0891B2", "mint": "#0E7490", "pale": "#155E75",
-        },
-    },
-}
+# Identidad "Premium Dark Tech" — fuente única: dm-design-system.
+# Los valores viven en src/dm_tokens.py (copiado de dist/tokens.py, generado
+# desde tokens/tokens.json). Aquí solo se mapean a las claves internas de la app.
+
+
+def _tema(nombre: str) -> dict:
+    t = dm.THEMES[nombre]
+    es_dark = nombre == "Dark"
+    return {
+        "_name": nombre,
+        "accent": t["accent"],
+        "accent_2": t["accent2"],
+        "accent_3": t["accent3"],
+        "positive": t["positive"],
+        "negative": t["negative"],
+        "text": t["textTitle"],
+        "muted": t["textMuted"],
+        "soft_text": t["textBody"],
+        "line": t["line"],
+        "app_bg": t["bgBody"],
+        "sidebar_bg": t["surface1"],
+        "panel_bg": t["surface1Alt"] if es_dark else t["surface1"],
+        "panel_solid": t["surface2"] if es_dark else t["surface1Alt"],
+        "eyebrow_bg": t["eyebrowBg"],
+        "eyebrow_text": t["eyebrowText"],
+        "input_bg": t["inputBg"],
+        "chart_grid": t["chartGrid"],
+        "chart_bg": t["chartBg"],
+        "kpi": t["kpi"],
+        "ink": t["ink"],
+    }
+
+
+THEMES = {"Dark": _tema("Dark"), "Light": _tema("Light")}
 
 # Gradiente de marca (violeta -> primario -> cian)
-BRAND_GRAD = "linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #06B6D4 100%)"
+BRAND_GRAD = dm.BRAND_GRAD
 
 ACTIVE_THEME = THEMES["Light"]
 
@@ -326,26 +304,17 @@ MESES_FULL = {
     7: "Julio", 8: "Agosto", 9: "Septiembre", 10: "Octubre", 11: "Noviembre", 12: "Diciembre",
 }
 
-# Alturas estándar para mantener proporciones homogéneas por fila
-H_PAIRED   = 480   # gráficos en columnas de 2 (mismo valor para ambos)
-H_PYRAMID  = 480   # pirámide siempre igual a su par
-H_SINGLE   = 380   # gráficos que van solos a ancho completo
-H_SMALL    = 320   # gráficos pequeños (3 columnas, guía, metodología)
+# Alturas estándar y paleta de gráficos — fuente única: src/dm_tokens.py
+H_PAIRED = dm.H_PAIRED     # gráficos en columnas de 2 (mismo valor para ambos)
+H_PYRAMID = dm.H_PYRAMID   # pirámide siempre igual a su par
+H_SINGLE = dm.H_SINGLE     # gráficos que van solos a ancho completo
+H_SMALL = dm.H_SMALL       # gráficos pequeños (3 columnas, guía, metodología)
 
-# Rampa secuencial de marca: cian claro -> cian -> azul primario -> azul oscuro
-BLUE_TEAL_30 = [
-    "#EAFBFF", "#DBF9FE", "#CCF6FD", "#BDF4FC", "#AEF1FB",
-    "#9FEFF9", "#90ECF8", "#81EAF7", "#71E4F3", "#60DDEF",
-    "#50D6EA", "#3FCFE5", "#2FC8E0", "#1FC1DB", "#0EBAD6",
-    "#08B0D6", "#0CA5D9", "#1199DC", "#158EDF", "#1982E2",
-    "#1E77E5", "#226CE9", "#2562E9", "#245DE1", "#2358D8",
-    "#2253D0", "#214EC8", "#204AC0", "#1F45B7", "#1E40AF",
-]
-BLUE_TEAL_SCALE = [[i / (len(BLUE_TEAL_30) - 1), color] for i, color in enumerate(BLUE_TEAL_30)]
-BLUE_TEAL_DISCRETE = ["#1E40AF", "#1D4ED8", "#2563EB", "#06B6D4", "#22D3EE", "#67E8F9", "#A5F3FC"]
+BLUE_TEAL_30 = dm.BLUE_TEAL_30
+BLUE_TEAL_SCALE = dm.BLUE_TEAL_SCALE
+BLUE_TEAL_DISCRETE = dm.BLUE_TEAL_DISCRETE
 BT_NAVY, BT_DEEP, BT_BLUE, BT_TEAL, BT_MINT, BT_PALE, BT_ICE = BLUE_TEAL_DISCRETE
-# Colores por sexo — espejo de shiny-app/R/plot_theme.R (COLOR_SEXO)
-SEX_COLORS = {"Hombre": BT_BLUE, "Mujer": BT_TEAL}
+SEX_COLORS = dm.SEX_COLORS
 
 # Salario Mínimo Mensual Legal Vigente (COP) — Decreto DANE cada enero
 SMMLV = {2022: 1_000_000, 2023: 1_160_000, 2024: 1_300_606, 2025: 1_423_500}
@@ -483,9 +452,9 @@ def inject_styles(theme_name: str) -> None:
     #   gutter página/sidebar/contenido = 1rem (16px), padding de cards = 1rem,
     #   separación entre secciones = 0.5rem/1rem. Todas las vistas comparten
     #   el mismo eje de inicio (sidebar top = contenido top = 1rem).
-    sidebar_width = "15.5rem"
-    sidebar_gap = "1rem"
-    content_left = "16.5rem"  # sidebar_gap + sidebar_width
+    sidebar_width = dm.SIDEBAR_WIDTH
+    sidebar_gap = dm.SIDEBAR_GAP
+    content_left = dm.CONTENT_LEFT  # sidebar_gap + sidebar_width
 
     # Color para botón de limpiar
     btn_clear_bg = "#F8FAFC" if is_light else "#18233C"
@@ -525,8 +494,8 @@ def inject_styles(theme_name: str) -> None:
             --touch: 44px; /* objetivo táctil mínimo (WCAG 2.5.8 / HIG) */
             /* Tipografía del sistema DM: títulos Space Grotesk (puente a Aeonik),
                cuerpo Inter, números/código JetBrains Mono con tabular-nums */
-            --font-heading: "Space Grotesk", "Aeonik", "Inter", system-ui, sans-serif;
-            --font-mono: "JetBrains Mono", ui-monospace, monospace;
+            --font-heading: "{dm.FONT_HEADING}", "Aeonik", "{dm.FONT_BODY}", system-ui, sans-serif;
+            --font-mono: "{dm.FONT_MONO}", ui-monospace, monospace;
         }}
 
         /* ── Interacción táctil y accesibilidad (todos los viewports) ────── */
@@ -1388,6 +1357,9 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
     full_title = title
     if subtitle:
         full_title = f"{title}<br><sup style='color:{t['muted']};font-weight:400'>{subtitle}</sup>"
+    # Base de identidad del sistema DM (colorway, fondos, tipografías);
+    # los ajustes finos de la app se aplican encima.
+    fig.update_layout(**dm.plotly_layout(t["_name"]))
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor=t["chart_bg"],

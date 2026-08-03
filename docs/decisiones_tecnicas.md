@@ -406,3 +406,17 @@ Verificado con Playwright (390px): abre en left:0 con 304px de ancho, navega a o
 - `render_kpi` agrega la clase `kpi-value--long` cuando el valor supera 8 caracteres; en movil baja un paso de la escala fluida — evita que `$1.500.000` (mas ancho en mono) se parta dentro de la tarjeta.
 
 Verificado en dark/light y 390/1440 px; 25 tests y ruff en verde. Pendiente del sistema formal: consumir `dist/tokens.py` en lugar del dict `THEMES` hardcodeado.
+
+---
+
+## DT-026 - Tokens desde dm-design-system: fin del hardcodeo (2026-08-02)
+
+**Decision:** los valores de identidad dejan de vivir en `app/main.py` y pasan a consumirse del adaptador oficial del sistema de diseno.
+
+- `src/dm_tokens.py` es copia literal de `dm-design-system/dist/tokens.py` (generado desde `tokens/tokens.json` con `build/build.py`). Para actualizar la identidad: editar el JSON, regenerar y volver a copiar — nunca editar valores a mano en este repo.
+- `THEMES` de la app ahora se construye con `_tema()`, que solo mapea claves del sistema (camelCase) a las claves internas: `accent2 -> accent_2`, `textTitle -> text`, `surface1Alt -> panel_bg` (dark), etc. Valores byte-identicos a los anteriores: cero cambio visual (verificado con capturas dark/light).
+- `BRAND_GRAD`, `BLUE_TEAL_30/SCALE/DISCRETE`, `SEX_COLORS`, alturas `H_*`, `SIDEBAR_WIDTH/GAP/CONTENT_LEFT` y los nombres de fuentes salen de `dm` (los `--font-*` del CSS se interpolan desde `dm.FONT_*`).
+- `fig_base` aplica `dm.plotly_layout(tema)` como base (colorway de marca incluido como red de seguridad para trazas sin color explicito) y encima los ajustes finos de la app.
+- `.streamlit/config.toml` adopta el bloque `[theme]` de `dist/streamlit_light.toml` (el default de la app es claro por decision del usuario).
+
+Con esto se cierra la adopcion del sistema formal: DT-025 (tipografia) + DT-026 (tokens). 25 tests y ruff en verde.
