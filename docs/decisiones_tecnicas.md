@@ -284,3 +284,28 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 - Subtitulos de `fig_base_h` sin referencias a variables internas (P3042, P6430, RAMA2D_R4).
 - Margen derecho subido a 90 px en todos los graficos horizontales para evitar recorte del texto de valor en barras largas.
 - Leyenda de piramide poblacional bajada de `y=1.08` a `y=-0.12` para evitar solapamiento con titulos vecinos.
+
+---
+
+## DT-019 - Rediseno visual con identidad de marca "Premium Dark Tech" (2026-08-02)
+
+**Decision:** alinear todo el sistema visual del dashboard con la marca personal de Daniel Molina, tomando como referencia `personal_landing/colores_paleta.md` (paleta oficial) y `shiny-app/www/brand.css` + `shiny-app/R/plot_theme.R` (implementacion de la misma identidad en el dashboard R/Shiny).
+
+**Tokens adoptados (modo oscuro, espejo de la landing):**
+
+- Canvas `#0A0E1A` - escala de superficies `#0F1729` / `#131C31` / `#18233C` / `#202D4E`.
+- Gradiente de marca `linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #06B6D4 100%)` (constante `BRAND_GRAD`): borde superior de tarjetas, item activo del nav y acentos.
+- Textos `#F9FAFB` / `#E5E7EB` / `#9CA3AF`; bordes `rgba(255,255,255,0.06)`; radio 14px.
+- KPIs con valor en cian `#06B6D4` (token `kpi` del tema), como los `.kpi-value` del brand.css.
+
+**Modo claro derivado:** la landing es dark-only, por lo que el modo claro se derivo de la misma paleta con superficies frias azul-blanco (`#F3F6FB` / `#FFFFFF`), mismos acentos azul/cian oscurecidos para contraste WCAG (`#1D4ED8`, `#0891B2`).
+
+**Graficos Plotly:**
+
+- `BLUE_TEAL_30` regenerada como rampa de marca cian claro -> cian -> azul primario -> azul oscuro (`#EAFBFF` -> `#06B6D4` -> `#2563EB` -> `#1E40AF`).
+- `BLUE_TEAL_DISCRETE` = tonos de la misma rampa; `SEX_COLORS` espejo de `COLOR_SEXO` del plot_theme.R (Hombre `#2563EB`, Mujer `#06B6D4`).
+- Resaltado geografico cambiado de naranja `#E05A2A` a ambar de acento del tema (`accent_3`).
+
+**Tipografia:** Inter (unica familia, como la marca) reemplaza a Fraunces + Manrope en CSS, graficos y documentos HTML.
+
+**Tintas por tema (`THEMES[...]["ink"]`):** los documentos Guia y Metodologia usaban colores de la paleta de graficos como color de texto; sobre fondo oscuro quedaban ilegibles. Cada tema define ahora 6 tintas (`navy/deep/blue/teal/mint/pale`) legibles sobre su fondo, y las vistas de documento las usan sombreando localmente las constantes `BT_*`.

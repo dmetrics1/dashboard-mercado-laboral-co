@@ -240,6 +240,7 @@ Ver `docs/decisiones_tecnicas.md`. Resumen:
 - **DT-011** Eliminación de indentación en `st.markdown`. Evita que el HTML se interprete como bloques de código Markdown.
 - **DT-012** Botón 'Limpiar Filtros' mediante callbacks para evitar errores de estado.
 - **DT-013** Refuerzo de contraste CSS para selectores en modo claro.
+- **DT-019** Rediseño visual con identidad de marca "Premium Dark Tech" (paleta de `personal_landing/colores_paleta.md` y `shiny-app/www/brand.css`): gradiente azul→cian, superficies oscuras `#0A0E1A`/`#0F1729`, tipografía Inter, KPIs en cian, rampa de gráficos de marca y tintas por tema para documentos. Detalle completo en `docs/decisiones_tecnicas.md`.
 
 ---
 
@@ -288,7 +289,7 @@ NO incluir en esta versiÃ³n:
 - Vistas identificadas por clave corta: `resumen`, `poblacion`, `ocupados`, `desocupados`, `brechas`, `instrucciones`, `metodologia`.
 - Toggle de tema: `?theme=Dark|Light` en query param, leÃ­do al inicio del script.
 - Ãconos: SVG inline estilo Feather/Lucide (16-20 px, stroke 1.8).
-- Paleta: accent `#7C3AED`, accent_2 `#06B6D4`, accent_3 `#F59E0B`, positive `#10B981`, negative `#F43F5E`.
+- Paleta (marca "Premium Dark Tech", DT-019): gradiente `#1E40AF -> #2563EB -> #06B6D4`, accent `#2563EB`, accent_2 `#06B6D4`, accent_3 `#F59E0B`, positive `#10B981`, negative `#F43F5E`. Canvas oscuro `#0A0E1A`, superficies `#0F1729`/`#131C31`/`#18233C`. Tipografia `Inter`.
 
 ### Pendiente por construir (prioridad en este orden)
 1. **`notebooks/03_validar_indicadores.ipynb`** â€” comparaciÃ³n con cifras oficiales DANE.

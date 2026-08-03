@@ -63,7 +63,7 @@
 - **Resaltado geográfico:** al seleccionar un departamento o ciudad se resalta en el mapa con borde naranja sin ocultar el resto del territorio.
 - **Mapas independientes:** el mapa de ciudades siempre muestra todas las áreas metropolitanas independientemente del filtro de departamento activo.
 - **KPI cards compactas:** título y valor centrados, sin texto de delta ni pie de página.
-- **Tema dual** oscuro / claro con inyección de CSS personalizada y tipografía premium (`Fraunces` & `Manrope`).
+- **Tema dual** oscuro / claro con la identidad de marca *Premium Dark Tech* (paleta azul `#1E40AF` → `#2563EB` → cian `#06B6D4` sobre superficies `#0A0E1A`/`#0F1729`), CSS personalizado y tipografía `Inter`.
 - **Métricas avanzadas:** TD, TO, TGP, informalidad, ingreso laboral mediano, FFT por periodo, departamento y ciudad.
 
 ---
@@ -87,7 +87,7 @@
 | Gráficos | Plotly (Scatter/Choropleth Mapbox, subplots) |
 | ETL | Polars + pandas + pyarrow |
 | Persistencia | Parquet (`indicadores_mensuales.parquet`) |
-| Estilos | CSS dinámico (Dark/Light mode) |
+| Estilos | CSS dinámico (Dark/Light mode) · identidad de marca compartida con [la landing personal](https://github.com/dmetrics1) |
 | Tests | pytest — 25 tests unitarios (indicadores + diccionario) |
 | Deploy | Streamlit Community Cloud |
 

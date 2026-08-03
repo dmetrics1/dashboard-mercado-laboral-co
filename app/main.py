@@ -111,10 +111,10 @@ def plot_mapa_departamentos(df, indicador="TD", title="", geo_sel="Todos"):
                 locations=sel_row["_geo_name"],
                 z=sel_row[indicador],
                 featureidkey="properties.NOMBRE_DPT",
-                colorscale=[[0, "rgba(224,90,42,0.20)"], [1, "rgba(224,90,42,0.20)"]],
+                colorscale=[[0, hex_to_rgba(t["accent_3"], 0.20)], [1, hex_to_rgba(t["accent_3"], 0.20)]],
                 marker_opacity=1,
                 marker_line_width=3,
-                marker_line_color="#E05A2A",
+                marker_line_color=t["accent_3"],
                 showscale=False,
                 hoverinfo="skip",
             ))
@@ -175,8 +175,8 @@ def plot_mapa_ciudades(df_city: pd.DataFrame, indicador: str = "TD", geo_sel: st
 
     traces = []
 
-    # Anillo de la ciudad seleccionada en naranja/ámbar para contrastar con el colorscale azul
-    _CITY_RING = "#E05A2A"
+    # Anillo de la ciudad seleccionada en ámbar (accent_3) para contrastar con el colorscale azul
+    _CITY_RING = t["accent_3"]
     if not sel_row.empty:
         base_size = float(18 + (sel_row[indicador].iloc[0] - vmin) / (vmax - vmin + 1e-9) * 26)
         traces.append(go.Scattermapbox(
@@ -250,48 +250,66 @@ def render_interpretation(text: str, title: str = "Lectura"):
 # ---------------------------------------------------------------------------
 # Paleta y temas
 # ---------------------------------------------------------------------------
+# Identidad "Premium Dark Tech" — Marca personal Daniel Molina.
+# Tokens espejo de personal_landing/colores_paleta.md y shiny-app/www/brand.css.
 THEMES = {
     "Dark": {
-        "accent": "#338CA1",
-        "accent_2": "#7BBDBF",
+        "accent": "#2563EB",
+        "accent_2": "#06B6D4",
         "accent_3": "#F59E0B",
         "positive": "#10B981",
         "negative": "#F43F5E",
-        "text": "#F1F5F9",
-        "muted": "#94A3B8",
-        "line": "rgba(255,255,255,0.10)",
-        "app_bg": "linear-gradient(160deg, #080c1a 0%, #07091a 60%, #04060f 100%)",
-        "sidebar_bg": "rgba(10,14,28,0.98)",
-        "panel_bg": "rgba(15,21,40,0.96)",
-        "panel_solid": "rgba(12,18,35,0.98)",
-        "soft_text": "#CBD5E1",
-        "eyebrow_bg": "rgba(81,166,174,0.18)",
-        "eyebrow_text": "#7BBDBF",
-        "input_bg": "rgba(255,255,255,0.04)",
-        "chart_grid": "rgba(255,255,255,0.07)",
+        "text": "#F9FAFB",
+        "muted": "#9CA3AF",
+        "line": "rgba(255,255,255,0.06)",
+        "app_bg": "#0A0E1A",
+        "sidebar_bg": "#0F1729",
+        "panel_bg": "#131C31",
+        "panel_solid": "#18233C",
+        "soft_text": "#E5E7EB",
+        "eyebrow_bg": "rgba(6,182,212,0.15)",
+        "eyebrow_text": "#06B6D4",
+        "input_bg": "rgba(24,35,60,0.55)",
+        "chart_grid": "rgba(255,255,255,0.06)",
         "chart_bg": "rgba(0,0,0,0)",
+        "kpi": "#06B6D4",
+        # Tintas legibles sobre fondo oscuro para textos/acentos de documentos
+        "ink": {
+            "navy": "#60A5FA", "deep": "#38BDF8", "blue": "#4F8DF9",
+            "teal": "#06B6D4", "mint": "#22D3EE", "pale": "#67E8F9",
+        },
     },
+    # Variante clara derivada de la misma paleta (superficies frías azul-blanco)
     "Light": {
-        "accent": "#1E2D55",
-        "accent_2": "#27638A",
-        "accent_3": "#B45309",
-        "positive": "#047857",
-        "negative": "#B91C1C",
-        "text": "#1A1812",
-        "muted": "#5C5A52",
-        "line": "rgba(26,24,18,0.14)",
-        "app_bg": "#F4EFE6",
-        "sidebar_bg": "#FBF8F1",
-        "panel_bg": "#FBF8F1",
-        "panel_solid": "#FBF8F1",
-        "soft_text": "#2A2620",
-        "eyebrow_bg": "rgba(30,45,85,0.08)",
-        "eyebrow_text": "#1E2D55",
-        "input_bg": "rgba(26,24,18,0.04)",
-        "chart_grid": "rgba(26,24,18,0.08)",
+        "accent": "#2563EB",
+        "accent_2": "#0891B2",
+        "accent_3": "#D97706",
+        "positive": "#059669",
+        "negative": "#E11D48",
+        "text": "#0B1220",
+        "muted": "#64748B",
+        "line": "rgba(15,23,42,0.10)",
+        "app_bg": "#F3F6FB",
+        "sidebar_bg": "#FFFFFF",
+        "panel_bg": "#FFFFFF",
+        "panel_solid": "#F8FAFC",
+        "soft_text": "#1E293B",
+        "eyebrow_bg": "rgba(37,99,235,0.08)",
+        "eyebrow_text": "#1E40AF",
+        "input_bg": "rgba(37,99,235,0.05)",
+        "chart_grid": "rgba(15,23,42,0.08)",
         "chart_bg": "rgba(0,0,0,0)",
+        "kpi": "#1D4ED8",
+        # Tintas legibles sobre fondo claro para textos/acentos de documentos
+        "ink": {
+            "navy": "#1E40AF", "deep": "#1D4ED8", "blue": "#2563EB",
+            "teal": "#0891B2", "mint": "#0E7490", "pale": "#155E75",
+        },
     },
 }
+
+# Gradiente de marca (violeta -> primario -> cian)
+BRAND_GRAD = "linear-gradient(135deg, #1E40AF 0%, #2563EB 50%, #06B6D4 100%)"
 
 ACTIVE_THEME = THEMES["Light"]
 
@@ -309,18 +327,20 @@ H_PYRAMID  = 480   # pirámide siempre igual a su par
 H_SINGLE   = 380   # gráficos que van solos a ancho completo
 H_SMALL    = 320   # gráficos pequeños (3 columnas, guía, metodología)
 
+# Rampa secuencial de marca: cian claro -> cian -> azul primario -> azul oscuro
 BLUE_TEAL_30 = [
-    "#EDF7F7", "#E5F3F3", "#DDEEEF", "#D5EAEB", "#CCE5E6",
-    "#C3E0E2", "#B9DBDD", "#AED6D8", "#A2D0D2", "#96CACC",
-    "#89C4C5", "#7BBDBF", "#6DB6B9", "#5FAEB3", "#51A6AE",
-    "#459EA9", "#3B95A5", "#338CA1", "#2E829D", "#2B7898",
-    "#296E91", "#27638A", "#255982", "#244F7A", "#234672",
-    "#223F6B", "#213964", "#20345E", "#1F3059", "#1E2D55",
+    "#EAFBFF", "#DBF9FE", "#CCF6FD", "#BDF4FC", "#AEF1FB",
+    "#9FEFF9", "#90ECF8", "#81EAF7", "#71E4F3", "#60DDEF",
+    "#50D6EA", "#3FCFE5", "#2FC8E0", "#1FC1DB", "#0EBAD6",
+    "#08B0D6", "#0CA5D9", "#1199DC", "#158EDF", "#1982E2",
+    "#1E77E5", "#226CE9", "#2562E9", "#245DE1", "#2358D8",
+    "#2253D0", "#214EC8", "#204AC0", "#1F45B7", "#1E40AF",
 ]
 BLUE_TEAL_SCALE = [[i / (len(BLUE_TEAL_30) - 1), color] for i, color in enumerate(BLUE_TEAL_30)]
-BLUE_TEAL_DISCRETE = ["#1E2D55", "#27638A", "#338CA1", "#51A6AE", "#7BBDBF", "#A2D0D2", "#D5EAEB"]
+BLUE_TEAL_DISCRETE = ["#1E40AF", "#1D4ED8", "#2563EB", "#06B6D4", "#22D3EE", "#67E8F9", "#A5F3FC"]
 BT_NAVY, BT_DEEP, BT_BLUE, BT_TEAL, BT_MINT, BT_PALE, BT_ICE = BLUE_TEAL_DISCRETE
-SEX_COLORS = {"Hombre": BT_DEEP, "Mujer": BT_TEAL}
+# Colores por sexo — espejo de shiny-app/R/plot_theme.R (COLOR_SEXO)
+SEX_COLORS = {"Hombre": BT_BLUE, "Mujer": BT_TEAL}
 
 # Salario Mínimo Mensual Legal Vigente (COP) — Decreto DANE cada enero
 SMMLV = {2022: 1_000_000, 2023: 1_160_000, 2024: 1_300_606, 2025: 1_423_500}
@@ -432,43 +452,43 @@ ICON_MOON = _I + '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></s
 # ---------------------------------------------------------------------------
 def inject_styles(theme_name: str) -> None:
     t = THEMES[theme_name]
-    # Paleta cálida para modo claro — todos los tonos en la misma familia arena/lino
-    sidebar_surface = t["panel_bg"] if theme_name == "Light" else "#0B1020"
-    sidebar_border = "rgba(139,110,75,0.18)" if theme_name == "Light" else "rgba(255,255,255,0.08)"
-    sidebar_text = "#1A1812" if theme_name == "Light" else "#E5E7EB"
-    sidebar_muted = "#6B6355" if theme_name == "Light" else "#9AA4B2"
-    sidebar_input = "rgba(26,24,18,0.05)" if theme_name == "Light" else "rgba(255,255,255,0.04)"
-    sidebar_accent = f"linear-gradient(135deg, {BT_DEEP} 0%, {BT_BLUE} 56%, {BT_TEAL} 100%)"
-    sidebar_accent_soft = "rgba(30,45,85,0.08)" if theme_name == "Light" else "rgba(81,166,174,0.15)"
-    sidebar_accent_border = "rgba(30,45,85,0.18)" if theme_name == "Light" else "rgba(123,189,191,0.34)"
-    sidebar_accent_shadow = "0 8px 20px rgba(30,45,85,0.18)" if theme_name == "Light" else "0 10px 28px rgba(0,0,0,0.34)"
-    select_bg = "#F5F0E6" if theme_name == "Light" else "#0C1223"
-    select_text = "#1A1812" if theme_name == "Light" else "#F8FAFC"
-    select_muted = "#6B6355" if theme_name == "Light" else "#CBD5E1"
-    select_border = "rgba(139,110,75,0.22)" if theme_name == "Light" else "rgba(255,255,255,0.16)"
-    dropdown_bg = "#F5F0E6" if theme_name == "Light" else "#0F172A"
-    dropdown_hover = "#E2E8F0" if theme_name == "Light" else "rgba(81,166,174,0.16)"
-    chrome_shadow = "0 6px 18px rgba(139,110,75,0.10)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.18)"
-    chart_shadow = "0 10px 24px rgba(15,23,42,0.07)" if theme_name == "Light" else "0 12px 28px rgba(0,0,0,0.16)"
+    # Superficies de marca "Premium Dark Tech" — escala de profundidad azul
+    is_light = theme_name == "Light"
+    sidebar_surface = t["sidebar_bg"]
+    sidebar_border = "rgba(15,23,42,0.10)" if is_light else "rgba(255,255,255,0.06)"
+    sidebar_text = "#0B1220" if is_light else "#F9FAFB"
+    sidebar_muted = "#64748B" if is_light else "#9CA3AF"
+    sidebar_input = "rgba(37,99,235,0.05)" if is_light else "#18233C"
+    sidebar_accent = BRAND_GRAD
+    sidebar_accent_soft = "rgba(37,99,235,0.08)" if is_light else "rgba(6,182,212,0.12)"
+    sidebar_accent_border = "rgba(37,99,235,0.25)" if is_light else "rgba(6,182,212,0.45)"
+    sidebar_accent_shadow = "0 8px 22px rgba(37,99,235,0.25)" if is_light else "0 8px 22px rgba(6,182,212,0.28)"
+    select_bg = "#F8FAFC" if is_light else "#18233C"
+    select_text = "#0B1220" if is_light else "#F9FAFB"
+    select_muted = "#64748B" if is_light else "#9CA3AF"
+    select_border = "rgba(15,23,42,0.14)" if is_light else "rgba(255,255,255,0.08)"
+    dropdown_bg = "#FFFFFF" if is_light else "#18233C"
+    dropdown_hover = "rgba(37,99,235,0.10)" if is_light else "rgba(6,182,212,0.16)"
+    chrome_shadow = "0 6px 18px rgba(15,23,42,0.06)" if is_light else "0 15px 35px rgba(0,0,0,0.35)"
+    chart_shadow = "0 10px 24px rgba(15,23,42,0.06)" if is_light else "0 15px 35px rgba(0,0,0,0.35)"
     sidebar_width = "15.5rem"
     sidebar_gap = "0.9rem"
     content_left = "16.85rem"
 
     # Color para botón de limpiar
-    btn_clear_bg = "#F5F0E6" if theme_name == "Light" else "rgba(255,255,255,0.04)"
-    btn_clear_hover = "#E2E8F0" if theme_name == "Light" else "rgba(255,255,255,0.08)"
+    btn_clear_bg = "#F8FAFC" if is_light else "#18233C"
+    btn_clear_hover = "rgba(37,99,235,0.08)" if is_light else "#202D4E"
     st.markdown(
         f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         html, body, [class*="css"] {{
-            font-family: "Manrope", system-ui, sans-serif;
+            font-family: "Inter", system-ui, -apple-system, sans-serif;
             color: {t['text']};
         }}
         .display-serif {{
-            font-family: "Fraunces", Georgia, serif !important;
-            font-optical-sizing: auto;
+            font-family: "Inter", system-ui, sans-serif !important;
             letter-spacing: -0.01em;
         }}
         body, .stApp, p, span, div, label {{
@@ -499,7 +519,7 @@ def inject_styles(theme_name: str) -> None:
             border: 1px solid {select_border} !important;
             border-radius: 12px !important;
             padding: 0.85rem 1rem !important;
-            box-shadow: {"0 2px 8px rgba(139,110,75,0.08)" if theme_name == "Light" else "0 10px 24px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.04)"} !important;
+            box-shadow: {"0 2px 8px rgba(15,23,42,0.06)" if is_light else "0 10px 24px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.04)"} !important;
             margin-top: -0.85rem !important;
             margin-bottom: 0.68rem !important;
         }}
@@ -570,7 +590,7 @@ def inject_styles(theme_name: str) -> None:
             background: {sidebar_accent_soft};
             border-radius: 0.55rem;
             display: flex; align-items: center; justify-content: center;
-            color: {BT_DEEP}; font-weight: 800; font-size: 0.88rem;
+            color: {t['eyebrow_text']}; font-weight: 800; font-size: 0.88rem;
             border: 1px solid {sidebar_accent_border};
             flex: 0 0 auto;
         }}
@@ -681,13 +701,12 @@ def inject_styles(theme_name: str) -> None:
         .nav-btn:hover {{
             border-color: {sidebar_accent_border};
             background: {sidebar_accent_soft};
-            color: {BT_DEEP} !important;
+            color: {t['eyebrow_text']} !important;
         }}
 
         .topbar-title {{
             color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            font-family: "Inter", system-ui, sans-serif;
             font-weight: 600;
             letter-spacing: -0.018em;
             line-height: 1.05;
@@ -734,7 +753,7 @@ def inject_styles(theme_name: str) -> None:
             box-shadow: {chrome_shadow};
         }}
         .card {{
-            border-radius: 10px;
+            border-radius: 14px;
             padding: 1.1rem 1rem 1.2rem;
             height: auto;
             position: relative;
@@ -749,18 +768,18 @@ def inject_styles(theme_name: str) -> None:
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 3px;
-            background: linear-gradient(90deg, {BT_DEEP} 0%, {BT_BLUE} 50%, {BT_TEAL} 100%);
+            background: {BRAND_GRAD};
             opacity: 0.95;
         }}
         .mini-card {{
-            border-radius: 10px;
+            border-radius: 12px;
             padding: 0.7rem 0.85rem;
         }}
         /* Tarjeta-contenedor para cada st.plotly_chart (visualmente la del spec) */
         [data-testid="stPlotlyChart"] {{
             background: {t['panel_bg']} !important;
             border: 1px solid {t['line']} !important;
-            border-radius: 10px !important;
+            border-radius: 14px !important;
             padding: 0.55rem 0.55rem 0.4rem !important;
             box-shadow: {chart_shadow} !important;
             height: 100%;
@@ -851,9 +870,8 @@ def inject_styles(theme_name: str) -> None:
             margin-bottom: 0.45rem;
         }}
         .kpi-value {{
-            color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            color: {t['kpi']};
+            font-family: "Inter", system-ui, sans-serif;
             font-size: 2.15rem;
             font-weight: 700;
             letter-spacing: -0.015em;
@@ -861,9 +879,8 @@ def inject_styles(theme_name: str) -> None:
             overflow-wrap: anywhere;
         }}
         .kpi-value-sm {{
-            color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            color: {t['kpi']};
+            font-family: "Inter", system-ui, sans-serif;
             font-size: 1.45rem;
             font-weight: 600;
             letter-spacing: -0.01em;
@@ -871,9 +888,8 @@ def inject_styles(theme_name: str) -> None:
             overflow-wrap: anywhere;
         }}
         .mini-value {{
-            color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            color: {t['kpi']};
+            font-family: "Inter", system-ui, sans-serif;
             font-size: 1.55rem;
             font-weight: 700;
             letter-spacing: -0.012em;
@@ -912,8 +928,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .section-header-title {{
             color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            font-family: "Inter", system-ui, sans-serif;
             font-size: 1.32rem;
             font-weight: 600;
             letter-spacing: -0.012em;
@@ -951,8 +966,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .interpretation-title {{
             color: {t['text']};
-            font-family: "Fraunces", Georgia, serif;
-            font-optical-sizing: auto;
+            font-family: "Inter", system-ui, sans-serif;
             font-size: 1rem;
             font-weight: 600;
             letter-spacing: -0.005em;
@@ -1125,8 +1139,8 @@ def inject_styles(theme_name: str) -> None:
                 flex-shrink: 0;
             }}
             .mobile-tab.active {{
-                color: {BT_DEEP} !important;
-                border-top-color: {BT_DEEP};
+                color: {t['accent']} !important;
+                border-top-color: {t['accent']};
             }}
             .mobile-tab.active svg {{
                 stroke-width: 2.1;
@@ -1134,7 +1148,7 @@ def inject_styles(theme_name: str) -> None:
             .mobile-tab.active span {{
                 display: block;
                 font-size: 0.55rem;
-                color: {BT_DEEP} !important;
+                color: {t['accent']} !important;
             }}
             .mobile-tab-extra {{
                 flex: 0 0 40px;
@@ -1222,7 +1236,7 @@ def fig_base(fig, title: str = "", subtitle: str = ""):
     fig.update_layout(
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor=t["chart_bg"],
-        font=dict(color=t["text"], family="Manrope, sans-serif", size=12),
+        font=dict(color=t["text"], family="Inter, system-ui, sans-serif", size=12),
         title=dict(
             text=full_title,
             font=dict(color=t["text"], size=13, weight=600),
@@ -3033,6 +3047,11 @@ def view_instrucciones(df_nac=None, df_dep=None):
 def _render_guide_doc(t):
     """Renderiza la guía de usuario como documento HTML único y fluido."""
 
+    # Tintas por tema: sombrear las constantes de paleta con versiones legibles
+    ink = t["ink"]
+    BT_NAVY, BT_DEEP, BT_BLUE = ink["navy"], ink["deep"], ink["blue"]
+    BT_TEAL, BT_MINT, BT_PALE = ink["teal"], ink["mint"], ink["pale"]
+
     TX  = t["text"]
     SF  = t["soft_text"]
     MU  = t["muted"]
@@ -3043,7 +3062,7 @@ def _render_guide_doc(t):
     # ── helpers ───────────────────────────────────────────────────────────────
     def h2(txt):
         return (
-            f"<h2 style='font-family:\"Fraunces\",Georgia,serif;font-size:1.32rem;"
+            f"<h2 style='font-family:\"Inter\",system-ui,sans-serif;font-size:1.32rem;"
             f"font-weight:700;color:{BT_DEEP};margin:2.4rem 0 0.7rem;padding-bottom:0.4rem;"
             f"border-bottom:2px solid {LN};'>{txt}</h2>"
         )
@@ -3080,7 +3099,7 @@ def _render_guide_doc(t):
             f"margin-bottom:1.5rem;background:{PB};border-radius:0 8px 8px 0;"
             f"border:1px solid {LN};border-left-width:4px;'>"
             f"<div style='display:flex;align-items:baseline;gap:0.6rem;margin-bottom:0.5rem;flex-wrap:wrap;'>"
-            f"<span style='font-family:\"Fraunces\",Georgia,serif;font-size:1.45rem;"
+            f"<span style='font-family:\"Inter\",system-ui,sans-serif;font-size:1.45rem;"
             f"font-weight:700;color:{color};line-height:1;'>{code}</span>"
             f"<span style='font-weight:700;color:{TX};font-size:0.92rem;'>&mdash;&nbsp;{name}</span>"
             f"<span style='margin-left:auto;'>{pill(formula, color)}</span>"
@@ -3116,7 +3135,7 @@ def _render_guide_doc(t):
     # ── contenido ─────────────────────────────────────────────────────────────
     header = (
         f"<div style='margin-bottom:2rem;padding-bottom:1.1rem;border-bottom:3px solid {BT_DEEP};'>"
-        f"<div style='font-family:\"Fraunces\",Georgia,serif;font-size:2rem;font-weight:700;"
+        f"<div style='font-family:\"Inter\",system-ui,sans-serif;font-size:2rem;font-weight:700;"
         f"color:{BT_DEEP};margin-bottom:0.35rem;'>Cómo leer este tablero</div>"
         f"<div style='color:{MU};font-size:0.97rem;max-width:680px;line-height:1.6;'>"
         f"Guía completa de indicadores, brechas y navegación &mdash; para que cualquier lector "
@@ -3319,6 +3338,9 @@ def _render_guide_doc(t):
 
 def view_metodologia(df):
     t = ACTIVE_THEME
+    # Tintas por tema: sombrear las constantes de paleta con versiones legibles
+    ink = t["ink"]
+    BT_NAVY, BT_DEEP, BT_BLUE, BT_TEAL = ink["navy"], ink["deep"], ink["blue"], ink["teal"]
     years = sorted(df["ano"].dropna().unique().tolist()) if "ano" in df.columns else []
     year_range = f"{years[0]}–{years[-1]}" if len(years) >= 2 else (str(years[0]) if years else "s/d")
 
@@ -3327,7 +3349,7 @@ def view_metodologia(df):
 
     def h2(txt):
         return (
-            f"<h2 style='font-family:Fraunces,serif; font-size:1.25rem; font-weight:700; "
+            f"<h2 style='font-family:Inter,sans-serif; font-size:1.25rem; font-weight:700; "
             f"color:{BT_DEEP}; margin:2rem 0 0.6rem; padding-bottom:0.35rem; "
             f"border-bottom:2px solid {LN};'>{txt}</h2>"
         )
@@ -3338,7 +3360,7 @@ def view_metodologia(df):
             f"padding:1rem 1.1rem; display:flex; flex-direction:column; gap:0.25rem;'>"
             f"<div style='font-size:0.72rem; font-weight:700; letter-spacing:.06em; "
             f"text-transform:uppercase; color:{MU};'>{label}</div>"
-            f"<div style='font-family:Fraunces,serif; font-size:1.4rem; font-weight:700; "
+            f"<div style='font-family:Inter,sans-serif; font-size:1.4rem; font-weight:700; "
             f"color:{BT_DEEP};'>{val}</div>"
             f"<div style='font-size:0.82rem; color:{SF}; line-height:1.45;'>{foot}</div>"
             f"</div>"
@@ -3349,7 +3371,7 @@ def view_metodologia(df):
             f"<div style='border-left:4px solid {color}; padding:0.65rem 0.9rem; "
             f"background:{IB}; border-radius:0 8px 8px 0; margin-bottom:0.55rem;'>"
             f"<div style='display:flex; align-items:baseline; gap:0.5rem; margin-bottom:0.2rem;'>"
-            f"<span style='font-family:Fraunces,serif; font-size:1.15rem; font-weight:700; "
+            f"<span style='font-family:Inter,sans-serif; font-size:1.15rem; font-weight:700; "
             f"color:{color};'>{code}</span>"
             f"<span style='font-size:0.9rem; font-weight:700; color:{TX};'>{name}</span>"
             f"</div>"
@@ -3373,7 +3395,7 @@ def view_metodologia(df):
     # ── Encabezado ────────────────────────────────────────────────────────────
     header = (
         f"<div style='border-bottom:3px solid {BT_DEEP}; padding-bottom:1rem; margin-bottom:0.25rem;'>"
-        f"<div style='font-family:Fraunces,serif; font-size:2rem; font-weight:800; color:{BT_DEEP}; "
+        f"<div style='font-family:Inter,sans-serif; font-size:2rem; font-weight:800; color:{BT_DEEP}; "
         f"line-height:1.15; margin-bottom:0.4rem;'>Ficha técnica · Metodología</div>"
         f"<div style='font-size:0.97rem; color:{SF}; max-width:72ch; line-height:1.6;'>"
         f"Procesamiento de microdatos de la <b>Gran Encuesta Integrada de Hogares (GEIH)</b> "
