@@ -309,3 +309,22 @@ Ultima revision: 2026-05-09 (quinta actualizacion).
 **Tipografia:** Inter (unica familia, como la marca) reemplaza a Fraunces + Manrope en CSS, graficos y documentos HTML.
 
 **Tintas por tema (`THEMES[...]["ink"]`):** los documentos Guia y Metodologia usaban colores de la paleta de graficos como color de texto; sobre fondo oscuro quedaban ilegibles. Cada tema define ahora 6 tintas (`navy/deep/blue/teal/mint/pale`) legibles sobre su fondo, y las vistas de documento las usan sombreando localmente las constantes `BT_*`.
+
+---
+
+## DT-020 - Layout global con cuadricula de 8px (2026-08-02)
+
+**Decision:** unificar el sistema de layout y espaciado de toda la aplicacion en una cuadricula de multiplos de 8px (0.5rem), de modo que las 7 vistas compartan exactamente el mismo eje de inicio y no existan saltos visuales al cambiar de modulo.
+
+**Sistema adoptado (definido en `inject_styles`):**
+
+- Gutter de pagina = 1rem (16px): sidebar en `top/left: 1rem`, `block-container` con `padding: 1rem 1rem 1.5rem` y `margin-left = sidebar_gap + sidebar_width` (16.5rem).
+- Padding interno de cards = 1rem; padding de tarjetas de grafico = 0.5rem; mini-cards 0.5rem 1rem.
+- Separadores: `.section-gap` 0.5rem, `.section-gap-lg` 1rem, `.section-header` margin 0.5rem + padding-top 0.5rem; bloques de interpretacion margin 1rem 0 1.5rem.
+- Mobile y breakpoint <=1200px con el mismo gutter de 1rem.
+
+**Correccion clave:** los `st.markdown` que inyectan elementos `position:fixed` (sidebar, tabbar) y el bloque `<style>` ocupaban slots del flex vertical de Streamlit (el `gap` de 1rem los cuenta aunque midan 0px), desplazando el contenido ~48px hacia abajo. Se sacan del flujo con `position:absolute` via `:has(.fixed-sidebar)`, `:has(.mobile-tabbar)` y un marcador `.dm-style-marker` en el markdown de estilos.
+
+**Alineacion de documentos:** las vistas Guia y Metodologia dejan de centrar su contenido (`margin: 0 auto` -> `margin: 0`); conservan `max-width: 960px` solo por legibilidad, arrancando en el mismo eje izquierdo que las tarjetas del resto de vistas.
+
+**Verificacion:** medicion programatica (Playwright) del primer elemento de cada vista: las 7 vistas inician en el mismo punto `[x=280, y=16]` con sidebar en `[16, 16]` a 1600px de viewport.

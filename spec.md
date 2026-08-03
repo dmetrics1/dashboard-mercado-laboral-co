@@ -241,6 +241,7 @@ Ver `docs/decisiones_tecnicas.md`. Resumen:
 - **DT-012** Botón 'Limpiar Filtros' mediante callbacks para evitar errores de estado.
 - **DT-013** Refuerzo de contraste CSS para selectores en modo claro.
 - **DT-019** Rediseño visual con identidad de marca "Premium Dark Tech" (paleta de `personal_landing/colores_paleta.md` y `shiny-app/www/brand.css`): gradiente azul→cian, superficies oscuras `#0A0E1A`/`#0F1729`, tipografía Inter, KPIs en cian, rampa de gráficos de marca y tintas por tema para documentos. Detalle completo en `docs/decisiones_tecnicas.md`.
+- **DT-020** Layout global con cuadrícula de 8px: gutter uniforme de 1rem, mismo eje de inicio en las 7 vistas (verificado programáticamente en [280,16]), wrappers de elementos fijos fuera del flujo flex, documentos alineados a la izquierda. Detalle en `docs/decisiones_tecnicas.md`.
 
 ---
 

@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+import streamlit.components.v1 as components
 from plotly.subplots import make_subplots
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -478,9 +479,13 @@ def inject_styles(theme_name: str) -> None:
     dropdown_hover = "rgba(37,99,235,0.10)" if is_light else "rgba(6,182,212,0.16)"
     chrome_shadow = "0 6px 18px rgba(15,23,42,0.06)" if is_light else "0 15px 35px rgba(0,0,0,0.35)"
     chart_shadow = "0 10px 24px rgba(15,23,42,0.06)" if is_light else "0 15px 35px rgba(0,0,0,0.35)"
+    # Sistema de espaciado global — cuadrícula de 8px (0.5rem):
+    #   gutter página/sidebar/contenido = 1rem (16px), padding de cards = 1rem,
+    #   separación entre secciones = 0.5rem/1rem. Todas las vistas comparten
+    #   el mismo eje de inicio (sidebar top = contenido top = 1rem).
     sidebar_width = "15.5rem"
-    sidebar_gap = "0.9rem"
-    content_left = "16.85rem"
+    sidebar_gap = "1rem"
+    content_left = "16.5rem"  # sidebar_gap + sidebar_width
 
     # Color para botón de limpiar
     btn_clear_bg = "#F8FAFC" if is_light else "#18233C"
@@ -525,10 +530,10 @@ def inject_styles(theme_name: str) -> None:
             background: {t['panel_bg']} !important;
             border: 1px solid {select_border} !important;
             border-radius: 12px !important;
-            padding: 0.85rem 1rem !important;
+            padding: 1rem !important;
             box-shadow: {"0 2px 8px rgba(15,23,42,0.06)" if is_light else "0 10px 24px rgba(0,0,0,0.20), inset 0 0 0 1px rgba(255,255,255,0.04)"} !important;
-            margin-top: -0.85rem !important;
-            margin-bottom: 0.68rem !important;
+            margin-top: 0 !important;
+            margin-bottom: 1rem !important;
         }}
         .st-key-hero_filters_card > div,
         .st-key-hero_filters_card [data-testid="stVerticalBlockBorderWrapper"] > div {{
@@ -547,10 +552,10 @@ def inject_styles(theme_name: str) -> None:
             max-width: calc(100vw - {content_left}) !important;
             margin-left: {content_left} !important;
             margin-right: 0 !important;
-            padding-left: 0.9rem !important;
-            padding-right: 1.65rem !important;
-            padding-top: 0 !important;
-            padding-bottom: 0.9rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
             box-sizing: border-box !important;
         }}
 
@@ -560,11 +565,27 @@ def inject_styles(theme_name: str) -> None:
             [data-testid="stAppViewContainer"] .block-container {{ 
                 width: 100% !important;
                 max-width: 100% !important;
-                margin-left: 0 !important; 
-                padding-left: 1.5rem !important;
-                padding-right: 1.5rem !important;
+                margin-left: 0 !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
             }}
             .fixed-sidebar {{ display: none !important; }}
+        }}
+
+        /* Los wrappers de los elementos fijos (sidebar / tabbar) no deben ocupar
+           slot en el flujo vertical (el gap del flex los cuenta aunque midan 0px
+           de alto): fuera del flujo con position:absolute. */
+        [data-testid="stElementContainer"]:has(.fixed-sidebar),
+        [data-testid="stElementContainer"]:has(.mobile-tabbar),
+        [data-testid="stElementContainer"]:has(.dm-style-marker),
+        [data-testid="stElementContainer"]:has(> [data-testid="stIFrame"]),
+        [data-testid="element-container"]:has(.fixed-sidebar),
+        [data-testid="element-container"]:has(.mobile-tabbar),
+        [data-testid="element-container"]:has(.dm-style-marker) {{
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: visible;
         }}
 
         .fixed-sidebar {{
@@ -736,8 +757,8 @@ def inject_styles(theme_name: str) -> None:
         .pill-row {{
             display: flex;
             flex-wrap: wrap;
-            gap: 0.45rem;
-            margin: 0.42rem 0 0.08rem;
+            gap: 0.5rem;
+            margin: 0 0 0.5rem;
         }}
         .pill {{
             background: {t['input_bg']};
@@ -755,7 +776,7 @@ def inject_styles(theme_name: str) -> None:
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            margin-bottom: 0.65rem;
+            margin-bottom: 0.5rem;
             opacity: 0.85;
         }}
 
@@ -766,7 +787,7 @@ def inject_styles(theme_name: str) -> None:
         }}
         .card {{
             border-radius: 14px;
-            padding: 1.1rem 1rem 1.2rem;
+            padding: 1rem;
             height: auto;
             position: relative;
             overflow: hidden;
@@ -785,14 +806,14 @@ def inject_styles(theme_name: str) -> None:
         }}
         .mini-card {{
             border-radius: 12px;
-            padding: 0.7rem 0.85rem;
+            padding: 0.5rem 1rem;
         }}
         /* Tarjeta-contenedor para cada st.plotly_chart (visualmente la del spec) */
         [data-testid="stPlotlyChart"] {{
             background: {t['panel_bg']} !important;
             border: 1px solid {t['line']} !important;
             border-radius: 14px !important;
-            padding: 0.55rem 0.55rem 0.4rem !important;
+            padding: 0.5rem !important;
             box-shadow: {chart_shadow} !important;
             height: 100%;
         }}
@@ -845,8 +866,8 @@ def inject_styles(theme_name: str) -> None:
         .map-extreme-card {{
             border: 1px solid {t['line']};
             border-radius: 8px;
-            padding: 0.85rem 0.95rem;
-            margin-top: 0.72rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
             background: {t['panel_solid']};
         }}
         .map-extreme-label {{
@@ -879,7 +900,7 @@ def inject_styles(theme_name: str) -> None:
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.12em;
-            margin-bottom: 0.45rem;
+            margin-bottom: 0.5rem;
         }}
         .kpi-value {{
             color: {t['kpi']};
@@ -911,7 +932,7 @@ def inject_styles(theme_name: str) -> None:
             color: {t['muted']};
             font-size: 0.8rem;
             line-height: 1.45;
-            margin-top: 0.55rem;
+            margin-top: 0.5rem;
         }}
         .kpi-delta {{
             display: inline-flex;
@@ -926,17 +947,16 @@ def inject_styles(theme_name: str) -> None:
         .kpi-delta.down {{ background: rgba(244,63,94,0.14); color: {t['negative']}; }}
         .kpi-delta.neutral {{ background: {t['input_bg']}; color: {t['muted']}; }}
 
-        .section-gap {{ height: 0.35rem; }}
-        .section-gap-lg {{ height: 0.7rem; }}
+        .section-gap {{ height: 0.5rem; }}
+        .section-gap-lg {{ height: 1rem; }}
         .section-header {{
-            margin: 0.3rem 0 0.35rem;
-            padding-top: 0.05rem;
+            margin: 0.5rem 0;
             border-top: 1px solid {t['line']};
             padding-top: 0.5rem;
         }}
         .section-header:first-of-type {{
             border-top: none;
-            padding-top: 0.1rem;
+            padding-top: 0;
         }}
         .section-header-title {{
             color: {t['text']};
@@ -970,8 +990,8 @@ def inject_styles(theme_name: str) -> None:
             border: 1px solid {t['line']};
             border-left: 4px solid {BT_DEEP};
             border-radius: 10px;
-            padding: 1.05rem 1.2rem 1.1rem;
-            margin: 1rem 0 1.4rem;
+            padding: 1rem;
+            margin: 1rem 0 1.5rem;
             color: {t['soft_text']};
             line-height: 1.55;
             box-shadow: {chart_shadow};
@@ -1104,9 +1124,9 @@ def inject_styles(theme_name: str) -> None:
                 width: 100% !important;
                 max-width: 100% !important;
                 margin-left: 0 !important;
-                padding-left: 0.75rem !important;
-                padding-right: 0.75rem !important;
-                padding-top: 0.5rem !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+                padding-top: 1rem !important;
                 padding-bottom: 5rem !important;
             }}
 
@@ -1195,22 +1215,11 @@ def inject_styles(theme_name: str) -> None:
             .topbar-sub           {{ font-size: 0.78rem !important; }}
             .interpretation-text  {{ font-size: 0.86rem !important; }}
 
-            /* Cards y paddings más compactos */
-            .card                {{ padding: 0.85rem 0.75rem 0.9rem !important; }}
-            .mini-card           {{ padding: 0.55rem 0.7rem !important; }}
-            .interpretation-block{{ padding: 0.8rem 0.9rem !important; }}
-            [data-testid="stPlotlyChart"] {{ padding: 0.3rem 0.25rem !important; }}
-
-            /* Hero card sin margen negativo en mobile */
-            .st-key-hero_filters_card,
-            .st-key-hero_filters_card [data-testid="stVerticalBlockBorderWrapper"] {{
-                margin-top: 0 !important;
-            }}
-
             /* Mapas — panel de control va debajo del mapa */
             [data-testid="stHorizontalBlock"] {{ flex-wrap: wrap !important; }}
         }}
         </style>
+        <div class="dm-style-marker"></div>
         """,
         unsafe_allow_html=True,
     )
@@ -1470,8 +1479,8 @@ def placeholder(msg: str, icon: str = "🔧"):
 def render_header(view_key: str, ultimo_txt: str, context_label: str):
     label = NAV_LABELS.get(view_key, view_key.capitalize())
     st.markdown(
-        f"""<div style='padding-top: 0.2rem;'>
-<div class='topbar-title' style="font-size: 1.5rem; margin-bottom: 0.2rem;">{label}</div>
+        f"""<div>
+<div class='topbar-title' style="font-size: 1.5rem; margin-bottom: 0.25rem;">{label}</div>
 <div class='topbar-sub'>
 Mercado laboral colombiano · GEIH DANE &nbsp;|&nbsp; Corte: {ultimo_txt}
 &nbsp;|&nbsp; Contexto: <strong>{context_label}</strong>
@@ -3347,8 +3356,10 @@ def _render_guide_doc(t):
         + "</ol>"
     )
 
+    # Mismo eje de inicio que el resto de vistas: alineado a la izquierda,
+    # ancho máximo solo para legibilidad del texto.
     doc = (
-        f"<div style='max-width:900px;margin:0 auto;padding:0.25rem 0.5rem 3rem;"
+        f"<div style='max-width:960px;margin:0;padding:0 0 3rem;"
         f"font-size:0.94rem;color:{TX};line-height:1.72;'>"
         + header + sec1 + sec2 + sec3 + sec4 + sec5
         + "</div>"
@@ -3495,7 +3506,7 @@ def view_metodologia(df):
 
     # ── Render parte A (encabezado + params) ─────────────────────────────────
     doc_a = (
-        "<div style='max-width:960px; margin:0 auto; padding:0.25rem 0.5rem 1rem;'>"
+        "<div style='max-width:960px; margin:0; padding:0 0 1rem;'>"
         + header + sec1
         + "</div>"
     )
@@ -3503,7 +3514,7 @@ def view_metodologia(df):
 
     # ── Chart de cobertura (Plotly, no embebible en HTML) ────────────────────
     st.markdown(
-        "<div style='max-width:960px; margin:0 auto;'>"
+        "<div style='max-width:960px; margin:0;'>"
         + h2("2 · Cobertura procesada")
         + f"<div style='font-size:0.86rem; color:{SF}; margin-bottom:0.5rem;'>"
         + f"Registros agregados por dimensión analítica · {year_range}</div></div>",
@@ -3531,7 +3542,7 @@ def view_metodologia(df):
 
     # ── Render parte B (definiciones + trazabilidad + notas) ─────────────────
     doc_b = (
-        "<div style='max-width:960px; margin:0 auto; padding:0 0.5rem 3rem;'>"
+        "<div style='max-width:960px; margin:0; padding:0 0 3rem;'>"
         + sec3 + sec4 + sec5
         + "</div>"
     )
@@ -3551,6 +3562,24 @@ if _qtheme in ("Dark", "Light"):
 
 ACTIVE_THEME = THEMES[st.session_state["theme_mode"]]
 inject_styles(st.session_state["theme_mode"])
+
+# Declarar el documento como español y no-traducible: el traductor automático de
+# Chrome corrompe términos técnicos ("pp" -> "págs.", "TO" -> "A") y los números.
+components.html(
+    """<script>
+    const doc = window.parent.document;
+    doc.documentElement.lang = "es";
+    doc.documentElement.setAttribute("translate", "no");
+    doc.documentElement.classList.add("notranslate");
+    if (!doc.querySelector('meta[name="google"][content="notranslate"]')) {
+        const m = doc.createElement("meta");
+        m.name = "google";
+        m.content = "notranslate";
+        doc.head.appendChild(m);
+    }
+    </script>""",
+    height=0,
+)
 
 df_all = cargar()
 if df_all.empty:
@@ -3649,7 +3678,6 @@ with title_slot:
 with body_slot:
     if vista not in ("metodologia", "instrucciones"):
         render_filters_summary(ano_ui, mes_ui, geo_level, geo_sel)
-        st.markdown("<div style='height:0.25rem'></div>", unsafe_allow_html=True)
 
     if vista == "resumen":
         view_resumen(df_context, df_dep, df_dep_mapa, df_city, df_city_mapa, context_label, df_tendencia, ano_ui, mes_ui, geo_sel=geo_sel)
